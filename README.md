@@ -7,7 +7,9 @@ Also, this Web system will recommend related information and/or similar resource
 Various computations could be performed by using existing big data techniques and tools –explore Awesome Big Data and Awesome Data Engineering. 
 Expose minimum 2 real-life use-cases – for instance, discovering the fine arts, dance, or music (styles/artists/organizations) influences in the last Y years in a specific geographical area. Additional knowledge: The Data Engineering Handbook.
 
-http://wikidata.org/wiki/Wikidata:Data_access
-https://github.com/oxnr/awesome-bigdata#readme
-https://github.com/igorbarinov/awesome-data-engineering#readme
-https://github.com/DataExpert-io/data-engineer-handbook
+Resources:
+
+- http://wikidata.org/wiki/Wikidata:Data_access
+- https://github.com/oxnr/awesome-bigdata#readme
+- https://github.com/igorbarinov/awesome-data-engineering#readme
+- https://github.com/DataExpert-io/data-engineer-handbook
