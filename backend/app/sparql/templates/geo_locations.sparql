@@ -1,0 +1,59 @@
+{# SPARQL template for fetching geographic locations #}
+{# Resolves P625 coordinates for authors and works #}
+
+SELECT DISTINCT ?entity ?entityLabel ?entityType ?location ?locationLabel ?lat ?lon ?year
+WHERE {
+  hint:Query hint:optimizer "None".
+  
+  {% if author_qids %}
+  {# Start from specified authors #}
+  VALUES ?author { {% for qid in author_qids %}wd:{{ qid }} {% endfor %} }
+  {% endif %}
+  
+  {% if book_qids %}
+  {# Start from specified books #}
+  VALUES ?book { {% for qid in book_qids %}wd:{{ qid }} {% endfor %} }
+  {% endif %}
+  
+  {% if layer == "birthplaces" %}
+  {# Author birthplaces (P19) #}
+  ?author wdt:P19 ?location.
+  ?location wdt:P625 ?coord.
+  OPTIONAL { ?author wdt:P569 ?birthDate. }
+  BIND(?author AS ?entity)
+  BIND("author" AS ?entityType)
+  BIND(YEAR(?birthDate) AS ?year)
+  
+  {% elif layer == "deathplaces" %}
+  {# Author death places (P20) #}
+  ?author wdt:P20 ?location.
+  ?location wdt:P625 ?coord.
+  OPTIONAL { ?author wdt:P570 ?deathDate. }
+  BIND(?author AS ?entity)
+  BIND("author" AS ?entityType)
+  BIND(YEAR(?deathDate) AS ?year)
+  
+  {% elif layer == "publications" %}
+  {# Publication places (P291) #}
+  ?book wdt:P291 ?location.
+  ?location wdt:P625 ?coord.
+  OPTIONAL { ?book wdt:P577 ?pubDate. }
+  BIND(?book AS ?entity)
+  BIND("book" AS ?entityType)
+  BIND(YEAR(?pubDate) AS ?year)
+  
+  {% elif layer == "settings" %}
+  {# Narrative locations (P840) #}
+  ?book wdt:P840 ?location.
+  ?location wdt:P625 ?coord.
+  BIND(?book AS ?entity)
+  BIND("book" AS ?entityType)
+  {% endif %}
+  
+  {# Extract coordinates #}
+  BIND(geof:latitude(?coord) AS ?lat)
+  BIND(geof:longitude(?coord) AS ?lon)
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+LIMIT {{ limit | default(1000) }}

@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - WIKIDATA_ENDPOINT=https://query.wikidata.org/sparql
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app # Hot reload in development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (Vite dev server)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src # Hot reload in development
+      - ./frontend/vite.config.ts:/app/vite.config.ts # Sync config
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  redis_data:

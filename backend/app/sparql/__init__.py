@@ -1,0 +1,1 @@
+"""SPARQL templates package."""

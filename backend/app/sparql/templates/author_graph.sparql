@@ -1,0 +1,61 @@
+{# SPARQL template for fetching author network graph #}
+{# Performs 2-hop queries for relationships between authors #}
+
+SELECT DISTINCT ?source ?sourceLabel ?target ?targetLabel ?relationType
+WHERE {
+  hint:Query hint:optimizer "None".
+  
+  {# Start from specified authors #}
+  VALUES ?source { {% for qid in author_qids %}wd:{{ qid }} {% endfor %} }
+  
+  {# Find relationships via multiple properties #}
+  {
+    {# P737: influenced by #}
+    ?source wdt:P737 ?target.
+    BIND("influenced_by" AS ?relationType)
+  }
+  UNION
+  {
+    {# Inverse: who this author influenced #}
+    ?target wdt:P737 ?source.
+    BIND("influenced" AS ?relationType)
+  }
+  UNION
+  {
+    {# P1066: student of #}
+    ?source wdt:P1066 ?target.
+    BIND("student_of" AS ?relationType)
+  }
+  UNION
+  {
+    {# Inverse: teacher of #}
+    ?target wdt:P1066 ?source.
+    BIND("teacher_of" AS ?relationType)
+  }
+  {% if include_coauthorship %}
+  UNION
+  {
+    {# Co-authorship: shared work #}
+    ?work wdt:P50 ?source.
+    ?work wdt:P50 ?target.
+    FILTER(?source != ?target)
+    BIND("coauthor" AS ?relationType)
+  }
+  {% endif %}
+  {% if include_movements %}
+  UNION
+  {
+    {# Same movement (P135) #}
+    ?source wdt:P135 ?movement.
+    ?target wdt:P135 ?movement.
+    FILTER(?source != ?target)
+    BIND("same_movement" AS ?relationType)
+  }
+  {% endif %}
+  
+  {# Ensure targets are humans (authors) #}
+  ?target wdt:P31 wd:Q5.
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+LIMIT {{ limit | default(500) }}

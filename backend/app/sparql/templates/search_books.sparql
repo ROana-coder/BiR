@@ -1,0 +1,50 @@
+{# SPARQL template for searching books/literary works #}
+{# Optimized for Wikidata Query Service performance #}
+
+SELECT DISTINCT ?book ?bookLabel ?author ?authorLabel ?pubDate ?genre ?genreLabel
+WHERE {
+  {# Simpler instance check - just book or literary work #}
+  VALUES ?type { wd:Q7725634 wd:Q571 wd:Q47461344 }
+  ?book wdt:P31 ?type.
+  
+  {# Must have author (P50) #}
+  ?book wdt:P50 ?author.
+  
+  {# Publication date (P577) - required for filtering to reduce results #}
+  ?book wdt:P577 ?pubDate.
+  
+  {# Genre (P136) - optional #}
+  OPTIONAL { ?book wdt:P136 ?genre. }
+  
+  {# === FILTERS === #}
+  
+  {% if genre_qid %}
+  {# Filter by genre #}
+  ?book wdt:P136 wd:{{ genre_qid }}.
+  {% endif %}
+  
+  {% if country_qid %}
+  {# Filter by author's nationality (P27) #}
+  ?author wdt:P27 wd:{{ country_qid }}.
+  {% endif %}
+  
+  {% if location_qid %}
+  {# Filter by author's birthplace (P19) #}
+  ?author wdt:P19 wd:{{ location_qid }}.
+  {% endif %}
+  
+  {% if year_start and year_end %}
+  {# Filter by publication year range #}
+  FILTER(YEAR(?pubDate) >= {{ year_start }} && YEAR(?pubDate) <= {{ year_end }})
+  {% elif year_start %}
+  FILTER(YEAR(?pubDate) >= {{ year_start }})
+  {% elif year_end %}
+  FILTER(YEAR(?pubDate) <= {{ year_end }})
+  {% endif %}
+  
+  {# Get labels in English #}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+ORDER BY DESC(?pubDate)
+LIMIT {{ limit | default(50) }}
+OFFSET {{ offset | default(0) }}
