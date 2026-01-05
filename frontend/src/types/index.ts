@@ -1,5 +1,5 @@
 /**
- * TypeScript interfaces for Republic of Letters API
+ * TypeScript interfaces for Literature Explorer API
  * Mirrors backend Pydantic models
  */
 

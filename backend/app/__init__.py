@@ -1,1 +1,1 @@
-"""Republic of Letters Backend Package."""
+"""Literature Explorer Backend Package."""

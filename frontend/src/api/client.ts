@@ -1,5 +1,5 @@
 /**
- * API client for Republic of Letters backend
+ * API client for Literature Explorer backend
  */
 
 import axios from 'axios';

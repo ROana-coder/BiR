@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     global _cache_service
     
     # Startup
-    logger.info("Starting Republic of Letters API...")
+    logger.info("Starting Literature Explorer API...")
     settings = get_settings()
     
     # Initialize cache
@@ -54,9 +54,9 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="Republic of Letters API",
+    title="Literature Explorer API",
     description="""
-    A high-performance API for exploring the Republic of Letters using Wikidata.
+    A high-performance API for exploring the Literature Explorer using Wikidata.
     
     ## Features
     
@@ -101,7 +101,7 @@ app.include_router(recommendations_router)
 async def root():
     """API root - health check."""
     return {
-        "name": "Republic of Letters API",
+        "name": "Literature Explorer API",
         "status": "healthy",
         "version": "1.0.0",
     }

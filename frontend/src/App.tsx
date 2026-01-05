@@ -1,6 +1,6 @@
 /**
  * Main App Component
- * Republic of Letters Data Exploration Platform
+ * Literature Explorer Data Exploration Platform
  */
 
 import React, { useState, useCallback } from 'react';

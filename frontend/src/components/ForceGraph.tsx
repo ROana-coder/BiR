@@ -204,10 +204,6 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--color-node-author)' }} />
                     Author
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--color-node-book)' }} />
-                    Book
-                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
                     <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--color-accent)' }} />
                     High Centrality
@@ -227,16 +223,33 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
                         const target = edge.target as SimulationNode;
                         if (!source.x || !source.y || !target.x || !target.y) return null;
 
+                        const isHovered = hoveredNode && (source.id === hoveredNode || target.id === hoveredNode);
+
                         return (
-                            <line
-                                key={`edge-${i}`}
-                                className="graph-edge"
-                                x1={source.x}
-                                y1={source.y}
-                                x2={target.x}
-                                y2={target.y}
-                                stroke={getEdgeColor(edge)}
-                            />
+                            <g key={`edge-${i}`}>
+                                <line
+                                    className="graph-edge"
+                                    x1={source.x}
+                                    y1={source.y}
+                                    x2={target.x}
+                                    y2={target.y}
+                                    stroke={getEdgeColor(edge)}
+                                    strokeWidth={isHovered ? 2 : 1}
+                                    opacity={isHovered ? 1 : 0.6}
+                                />
+                                {isHovered && (
+                                    <text
+                                        x={(source.x + target.x) / 2}
+                                        y={(source.y + target.y) / 2}
+                                        textAnchor="middle"
+                                        fill="var(--color-text-primary)"
+                                        fontSize="10px"
+                                        style={{ background: 'var(--color-bg)', textShadow: '0 0 4px var(--color-bg)' }}
+                                    >
+                                        {edge.type.toLowerCase().replace('_', ' ')}
+                                    </text>
+                                )}
+                            </g>
                         );
                     })}
 

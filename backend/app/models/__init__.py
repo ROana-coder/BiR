@@ -1,4 +1,4 @@
-"""Pydantic models for the Republic of Letters platform."""
+"""Pydantic models for the Literature Explorer platform."""
 
 from app.models.location import Location
 from app.models.author import Author
