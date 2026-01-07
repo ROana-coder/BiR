@@ -21,7 +21,9 @@ class Author(BaseModel):
     
     qid: str = Field(..., pattern=r"^Q\d+$", description="Wikidata Q-identifier")
     name: str = Field(..., min_length=1, description="Author's name")
-    
+    description: str | None = Field(None, description="Short bio/description")
+    image_url: str | None = Field(None, description="Image URL (P18)")
+
     # Dates
     birth_date: date | None = Field(None, description="Date of birth")
     death_date: date | None = Field(None, description="Date of death")

@@ -5,6 +5,7 @@
 import axios from 'axios';
 import type {
     Book,
+    Author,
     GraphData,
     GeoResponse,
     SimilarAuthor,
@@ -45,6 +46,11 @@ export async function searchBooks(params: SearchParams): Promise<Book[]> {
 
 export async function getBook(qid: string): Promise<Book> {
     const { data } = await api.get<Book>(`/search/books/${qid}`);
+    return data;
+}
+
+export async function getAuthor(qid: string): Promise<Author> {
+    const { data } = await api.get<Author>(`/search/authors/${qid}`);
     return data;
 }
 

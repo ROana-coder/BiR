@@ -13,6 +13,7 @@ interface ForceGraphProps {
     width?: number;
     height?: number;
     onNodeClick?: (node: GraphNode) => void;
+    highlightedNodeIds?: string[];
 }
 
 interface SimulationNode extends GraphNode {
@@ -29,7 +30,7 @@ interface SimulationEdge extends GraphEdge {
     target: SimulationNode | string;
 }
 
-export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: ForceGraphProps) {
+export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highlightedNodeIds }: ForceGraphProps) {
     const svgRef = useRef<SVGSVGElement>(null);
     const [nodes, setNodes] = useState<SimulationNode[]>([]);
     const [edges, setEdges] = useState<SimulationEdge[]>([]);
@@ -124,6 +125,11 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
 
     // Get node color based on type and centrality
     const getNodeColor = useCallback((node: SimulationNode) => {
+        // Highlight if in the filtered list
+        if (highlightedNodeIds && highlightedNodeIds.includes(node.id)) {
+            return '#ef4444'; // Red-500
+        }
+
         const isCentral = data.central_nodes.includes(node.id);
         if (isCentral) return 'var(--color-accent)';
 
@@ -137,7 +143,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
             default:
                 return 'var(--color-text-secondary)';
         }
-    }, [data.central_nodes]);
+    }, [data.central_nodes, highlightedNodeIds]);
 
     // Get node radius based on centrality
     const getNodeRadius = useCallback((node: SimulationNode) => {
@@ -201,6 +207,10 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444' }} />
+                    Selected Author
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--color-node-author)' }} />
                     Author
                 </div>
@@ -216,6 +226,32 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
                 height={height}
                 style={{ background: 'var(--color-bg)', cursor: 'grab' }}
             >
+                <defs>
+                    <marker
+                        id="arrowhead"
+                        viewBox="0 -5 10 10"
+                        refX="8"
+                        refY="0"
+                        markerWidth="6"
+                        markerHeight="6"
+                        orient="auto"
+                        fill="var(--color-edge)"
+                    >
+                        <path d="M0,-5L10,0L0,5" />
+                    </marker>
+                    <marker
+                        id="arrowhead-hover"
+                        viewBox="0 -5 10 10"
+                        refX="8"
+                        refY="0"
+                        markerWidth="6"
+                        markerHeight="6"
+                        orient="auto"
+                        fill="var(--color-accent)"
+                    >
+                        <path d="M0,-5L10,0L0,5" />
+                    </marker>
+                </defs>
                 <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
                     {/* Edges */}
                     {edges.map((edge, i) => {
@@ -225,17 +261,32 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick }: For
 
                         const isHovered = hoveredNode && (source.id === hoveredNode || target.id === hoveredNode);
 
+                        // Calculate intersection with target node boundary
+                        const dx = target.x - source.x;
+                        const dy = target.y - source.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const targetRadius = getNodeRadius(target);
+                        const arrowPadding = 4; // Space for arrow
+
+                        // Shorten line to stop at edge of node
+                        const ratio = (distance - targetRadius - arrowPadding) / distance;
+                        const endX = source.x + dx * ratio;
+                        const endY = source.y + dy * ratio;
+
+                        if (ratio < 0) return null; // Don't draw if nodes are overlapping
+
                         return (
                             <g key={`edge-${i}`}>
                                 <line
                                     className="graph-edge"
                                     x1={source.x}
                                     y1={source.y}
-                                    x2={target.x}
-                                    y2={target.y}
+                                    x2={endX}
+                                    y2={endY}
                                     stroke={getEdgeColor(edge)}
                                     strokeWidth={isHovered ? 2 : 1}
                                     opacity={isHovered ? 1 : 0.6}
+                                    markerEnd={`url(#${isHovered ? 'arrowhead-hover' : 'arrowhead'})`}
                                 />
                                 {isHovered && (
                                     <text

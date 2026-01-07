@@ -68,6 +68,16 @@ class Book(BaseModel):
     # Language (P407)
     language: str | None = Field(None, description="Original language")
     language_qid: str | None = Field(None, description="Language QID")
+
+    # Awards (P166)
+    awards: list[str] = Field(
+        default_factory=list,
+        description="Awards received (P166)"
+    )
+    award_qids: list[str] = Field(
+        default_factory=list,
+        description="Award QIDs"
+    )
     
     class Config:
         json_schema_extra = {

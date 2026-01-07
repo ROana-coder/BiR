@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Query, Path, HTTPException, Depends
 from typing import Annotated
 
-from app.models import Book
+from app.models import Book, Author
 from app.services.search_service import SearchService
 from app.services.wikidata_client import WikidataClient, WikidataTimeoutError
 from app.services.cache_service import CacheService
@@ -122,3 +122,22 @@ async def get_book(
             detail=f"Book {qid} not found",
         )
     return book
+
+
+@router.get(
+    "/authors/{qid}",
+    response_model=Author,
+    summary="Get a specific author by QID",
+)
+async def get_author(
+    qid: Annotated[str, Path(pattern=r"^Q\d+$", description="Wikidata QID")],
+    service: SearchService = Depends(get_search_service),
+) -> Author:
+    """Get a specific author by their Wikidata QID."""
+    author = await service.get_author(qid)
+    if not author:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Author {qid} not found",
+        )
+    return author

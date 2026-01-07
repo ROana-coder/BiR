@@ -1,50 +1,51 @@
 {# SPARQL template for searching books/literary works #}
 {# Optimized for Wikidata Query Service performance #}
 
-SELECT DISTINCT ?book ?bookLabel ?author ?authorLabel ?pubDate ?genre ?genreLabel
+SELECT ?book ?bookLabel ?author ?authorLabel ?pubDate (GROUP_CONCAT(DISTINCT ?genreLabel; separator=", ") AS ?genres) (GROUP_CONCAT(DISTINCT ?awardLabel; separator=", ") AS ?awards)
 WHERE {
-  {# Simpler instance check - just book or literary work #}
-  VALUES ?type { wd:Q7725634 wd:Q571 wd:Q47461344 }
-  ?book wdt:P31 ?type.
-  
-  {# Must have author (P50) #}
+  {
+    SELECT DISTINCT ?book ?pubDate 
+    WHERE {
+      VALUES ?type { wd:Q7725634 wd:Q571 wd:Q47461344 }
+      ?book wdt:P31 ?type.
+      ?book wdt:P577 ?pubDate.
+      
+      {# === FILTERS === #}
+      
+      {% if genre_qid %}
+      ?book wdt:P136 wd:{{ genre_qid }}.
+      {% endif %}
+      
+      {% if year_start and year_end %}
+      FILTER(YEAR(?pubDate) >= {{ year_start }} && YEAR(?pubDate) <= {{ year_end }})
+      {% elif year_start %}
+      FILTER(YEAR(?pubDate) >= {{ year_start }})
+      {% elif year_end %}
+      FILTER(YEAR(?pubDate) <= {{ year_end }})
+      {% endif %}
+
+      {# Nationality filter requires author join, optimize later if slow #}
+      {% if country_qid %}
+      ?book wdt:P50 ?author_filter.
+      ?author_filter wdt:P27 wd:{{ country_qid }}.
+      {% endif %}
+
+      {% if location_qid %}
+      ?book wdt:P50 ?author_filter.
+      ?author_filter wdt:P19 wd:{{ location_qid }}.
+      {% endif %}
+    }
+    ORDER BY DESC(?pubDate)
+    LIMIT {{ limit | default(50) }}
+    OFFSET {{ offset | default(0) }}
+  }
+
   ?book wdt:P50 ?author.
   
-  {# Publication date (P577) - required for filtering to reduce results #}
-  ?book wdt:P577 ?pubDate.
+  OPTIONAL { ?book wdt:P136 ?genre. ?genre rdfs:label ?genreLabel. FILTER(LANG(?genreLabel) = "en") }
+  OPTIONAL { ?book wdt:P166 ?award. ?award rdfs:label ?awardLabel. FILTER(LANG(?awardLabel) = "en") }
   
-  {# Genre (P136) - optional #}
-  OPTIONAL { ?book wdt:P136 ?genre. }
-  
-  {# === FILTERS === #}
-  
-  {% if genre_qid %}
-  {# Filter by genre #}
-  ?book wdt:P136 wd:{{ genre_qid }}.
-  {% endif %}
-  
-  {% if country_qid %}
-  {# Filter by author's nationality (P27) #}
-  ?author wdt:P27 wd:{{ country_qid }}.
-  {% endif %}
-  
-  {% if location_qid %}
-  {# Filter by author's birthplace (P19) #}
-  ?author wdt:P19 wd:{{ location_qid }}.
-  {% endif %}
-  
-  {% if year_start and year_end %}
-  {# Filter by publication year range #}
-  FILTER(YEAR(?pubDate) >= {{ year_start }} && YEAR(?pubDate) <= {{ year_end }})
-  {% elif year_start %}
-  FILTER(YEAR(?pubDate) >= {{ year_start }})
-  {% elif year_end %}
-  FILTER(YEAR(?pubDate) <= {{ year_end }})
-  {% endif %}
-  
-  {# Get labels in English #}
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,auto,it,fr,de,es". }
 }
+GROUP BY ?book ?bookLabel ?author ?authorLabel ?pubDate
 ORDER BY DESC(?pubDate)
-LIMIT {{ limit | default(50) }}
-OFFSET {{ offset | default(0) }}

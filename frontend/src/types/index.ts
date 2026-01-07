@@ -15,11 +15,13 @@ export interface Location {
 export interface Author {
     qid: string;
     name: string;
-    birth_date: string | null;
-    death_date: string | null;
+    description?: string;
+    image_url?: string;
+    birth_date?: string;
+    death_date?: string;
     birth_place: Location | null;
     death_place: Location | null;
-    nationality: string | null;
+    nationality?: string;
     nationality_qid: string | null;
     movements: string[];
     movement_qids: string[];
@@ -45,6 +47,8 @@ export interface Book {
     narrative_locations: Location[];
     language: string | null;
     language_qid: string | null;
+    awards: string[];
+    award_qids: string[];
 }
 
 // === Graph Types ===

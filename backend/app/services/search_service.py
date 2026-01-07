@@ -4,7 +4,7 @@ import logging
 from datetime import date
 
 from app.config import get_settings
-from app.models import Book, Location
+from app.models import Book, Location, Author
 from app.services.wikidata_client import WikidataClient
 from app.services.cache_service import CacheService
 from app.sparql.template_loader import render_sparql
@@ -68,6 +68,7 @@ class SearchService:
             limit=limit,
             offset=offset,
         )
+        cache_key += "_v2" # Force cache invalidation
         
         # Try cache
         cached = await self.cache.get(cache_key)
@@ -123,7 +124,7 @@ class SearchService:
                     except (ValueError, TypeError):
                         pass
                 
-                books_map[qid] = Book(
+                book = Book(
                     qid=qid,
                     title=row.get("bookLabel", "Unknown"),
                     publication_date=pub_date,
@@ -132,42 +133,49 @@ class SearchService:
                     author_qids=[],
                     genres=[],
                     genre_qids=[],
+                    awards=[],
+                    award_qids=[],
                 )
+                
+                # Parse comma-separated genres and awards
+                genre_str = row.get("genres", "")
+                if genre_str:
+                    book.genres = [g.strip() for g in genre_str.split(", ") if g.strip()]
+                    if book.genres:
+                        book.genre = book.genres[0] # Default to first genre
+                
+                award_str = row.get("awards", "")
+                if award_str:
+                    book.awards = [a.strip() for a in award_str.split(", ") if a.strip()]
+                
+                books_map[qid] = book
             
             book = books_map[qid]
             
-            # Add author if present
+            # Add author if present (still need to handle potential duplicate rows if author join caused them, but new query should GROUP BY book/author pair if 1 author)
+            # Actually new query groups by ?author too. If book has multiple authors, we get multiple rows.
+            # So duplicate check is still valid.
             author_qid = row.get("author")
             author_label = row.get("authorLabel")
             if author_qid and author_qid not in book.author_qids:
-                book.author_qids.append(author_qid)
                 if author_label:
+                    book.author_qids.append(author_qid)
                     book.authors.append(author_label)
-            
-            # Add genre if present
-            genre_qid = row.get("genre")
-            genre_label = row.get("genreLabel")
-            if genre_qid and genre_qid not in book.genre_qids:
-                book.genre_qids.append(genre_qid)
-                if genre_label:
-                    book.genres.append(genre_label)
-                    if not book.genre:
-                        book.genre = genre_label
-                        book.genre_qid = genre_qid
         
         return list(books_map.values())
     
     async def get_book_by_qid(self, qid: str) -> Book | None:
         """Get a specific book by its Wikidata QID."""
         query = f"""
-        SELECT ?book ?bookLabel ?author ?authorLabel ?pubDate ?genre ?genreLabel
+        SELECT ?book ?bookLabel ?author ?authorLabel ?pubDate ?genre ?genreLabel ?award ?awardLabel
         WHERE {{
             BIND(wd:{qid} AS ?book)
             ?book wdt:P31/wdt:P279* wd:Q7725634.
             OPTIONAL {{ ?book wdt:P50 ?author. }}
             OPTIONAL {{ ?book wdt:P577 ?pubDate. }}
             OPTIONAL {{ ?book wdt:P136 ?genre. }}
-            SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
+            OPTIONAL {{ ?book wdt:P166 ?award. }}
+            SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en,auto,it,fr,de,es". }}
         }}
         LIMIT 50
         """
@@ -175,3 +183,60 @@ class SearchService:
         results = await self.client.execute_query(query)
         books = self._parse_book_results(results)
         return books[0] if books else None
+
+    async def get_author(self, qid: str) -> Author | None:
+        """Get author details by QID."""
+        # Try cache
+        cache_key = f"author:{qid}"
+        cached = await self.cache.get(cache_key)
+        if cached:
+            return Author(**cached)
+
+        try:
+            # Query
+            query = render_sparql("get_author.sparql", qid=qid)
+            results = await self.client.execute_query(query)
+            
+            if not results:
+                return None
+                
+            row = results[0]
+            
+            # Parse dates
+            birth_date = None
+            if "birthDate" in row:
+                try:
+                    date_str = row["birthDate"].replace("+", "").split("T")[0]
+                    birth_date = date.fromisoformat(date_str)
+                except Exception:
+                    pass
+                    
+            death_date = None
+            if "deathDate" in row:
+                try:
+                    date_str = row["deathDate"].replace("+", "").split("T")[0]
+                    death_date = date.fromisoformat(date_str)
+                except Exception:
+                    pass
+
+            author = Author(
+                qid=qid,
+                name=row.get("name", "Unknown"),
+                description=row.get("description"),
+                image_url=row.get("image"),
+                nationality=row.get("nationalityLabel"),
+                nationality_qid=row.get("nationality"),
+                birth_date=birth_date,
+                death_date=death_date,
+            )
+            
+            await self.cache.set(cache_key, author.model_dump(), ttl_seconds=86400)
+            return author
+            
+        except Exception as e:
+            # Fallback for ANY error to prevent 500
+            return Author(
+                qid=qid,
+                name=f"Author {qid}",
+                description=f"Could not load details: {str(e)}",
+            )

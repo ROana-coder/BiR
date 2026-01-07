@@ -1,0 +1,23 @@
+SELECT ?name ?description ?birthDate ?deathDate ?image ?nationality ?nationalityLabel
+WHERE {
+  BIND(wd:{{ qid }} AS ?author)
+  
+  # Name/Label
+  OPTIONAL { ?author rdfs:label ?name. FILTER(LANG(?name) = "en") }
+  
+  # Description
+  OPTIONAL { ?author schema:description ?description. FILTER(LANG(?description) = "en") }
+  
+  # Dates
+  OPTIONAL { ?author wdt:P569 ?birthDate. }
+  OPTIONAL { ?author wdt:P570 ?deathDate. }
+  
+  # Image (P18)
+  OPTIONAL { ?author wdt:P18 ?image. }
+  
+  # Nationality (P27)
+  OPTIONAL { ?author wdt:P27 ?nationality. }
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+LIMIT 1

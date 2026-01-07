@@ -7,6 +7,8 @@ import React, { useState, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FacetedSearchSidebar } from './components/FacetedSearchSidebar';
 import { ForceGraph } from './components/ForceGraph';
+import { BooksForceGraph } from './components/BooksForceGraph';
+import { AuthorWorksList } from './components/AuthorWorksList';
 import { MapView } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { EmptyState, LoadingState, ErrorState } from './components/EmptyState';
@@ -37,7 +39,8 @@ function AppContent() {
     });
 
     // View state
-    const [activeTab, setActiveTab] = useState<TabType>('timeline');
+    const [activeTab, setActiveTab] = useState<'timeline' | 'graph' | 'map' | 'works'>('graph');
+    const [graphMode, setGraphMode] = useState<'influence' | 'works'>('influence');
     const [searchTriggered, setSearchTriggered] = useState(false);
     const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
 
@@ -64,7 +67,7 @@ function AppContent() {
         books.forEach((book) => {
             book.author_qids.forEach((qid) => qids.add(qid));
         });
-        return Array.from(qids).slice(0, 10); // Limit for performance
+        return Array.from(qids); // Limit removed per user request
     }, [books]);
 
     // Extract book QIDs for settings layer
@@ -173,22 +176,46 @@ function AppContent() {
                 return <Timeline books={books} onBookClick={handleBookClick} />;
 
             case 'graph':
-                if (graphLoading) {
-                    return <LoadingState message="Building network..." />;
-                }
-                if (graphError) {
-                    return <ErrorState message={graphError.message} />;
-                }
-                if (!graphData) {
-                    return <EmptyState icon="🔗" title="Select authors to visualize their network" description="" />;
-                }
+                if (graphLoading && graphMode === 'influence') return <LoadingState message="Building citation network..." />;
+                if (graphError && graphMode === 'influence') return <ErrorState message="Failed to load network graph." />;
+
                 return (
-                    <ForceGraph
-                        data={graphData}
-                        width={window.innerWidth - 360}
-                        height={window.innerHeight - 140}
-                        onNodeClick={handleNodeClick}
-                    />
+                    <div className="flex flex-col h-full relative">
+                        {/* Graph Mode Toggle */}
+                        <div className="absolute top-4 left-4 z-10 flex gap-1 bg-zinc-900/90 p-1 rounded-md border border-white/10 backdrop-blur-sm">
+                            <button
+                                onClick={() => setGraphMode('influence')}
+                                className={`tab ${graphMode === 'influence' ? 'tab--active' : ''}`}
+                            >
+                                Author Influence
+                            </button>
+                            <button
+                                onClick={() => setGraphMode('works')}
+                                className={`tab ${graphMode === 'works' ? 'tab--active' : ''}`}
+                            >
+                                Filtered Works
+                            </button>
+                        </div>
+
+                        <div className="flex-1 min-h-0 bg-zinc-950 rounded-lg border border-white/5 overflow-hidden">
+                            {graphMode === 'influence' ? (
+                                <ForceGraph
+                                    data={graphData || { nodes: [], edges: [], node_count: 0, edge_count: 0, central_nodes: [] }}
+                                    width={1200}
+                                    height={800}
+                                    onNodeClick={handleNodeClick}
+                                    highlightedNodeIds={authorQids} // Pass filtered authors to highlight
+                                />
+                            ) : (
+                                <BooksForceGraph
+                                    books={books}
+                                    width={1200}
+                                    height={800}
+                                    onNodeClick={(node) => console.log(node)}
+                                />
+                            )}
+                        </div>
+                    </div>
                 );
 
             case 'map':
@@ -208,6 +235,9 @@ function AppContent() {
                     />
                 );
 
+            case 'works':
+                return <AuthorWorksList books={books} />;
+
             default:
                 return null;
         }
@@ -220,9 +250,14 @@ function AppContent() {
                 <div className="header__logo">Literature Explorer</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
                     {searchTriggered && books.length > 0 && (
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                            {books.length} books found
-                        </span>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
+                            <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                                {authorQids.length} authors found
+                            </span>
+                            <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                                {books.length} books found
+                            </span>
+                        </div>
                     )}
                 </div>
             </header>
@@ -256,6 +291,12 @@ function AppContent() {
                         onClick={() => setActiveTab('map')}
                     >
                         🗺️ Map
+                    </button>
+                    <button
+                        className={`tab ${activeTab === 'works' ? 'tab--active' : ''}`}
+                        onClick={() => setActiveTab('works')}
+                    >
+                        📜 Works
                     </button>
                 </div>
 
