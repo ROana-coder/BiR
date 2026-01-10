@@ -1,0 +1,347 @@
+# SHACL Shapes for Literature Explorer Ontology
+# Defines constraints for validating RDF data against the literature ontology schema
+
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix lit: <http://literature-explorer.org/ontology#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+# =============================================================================
+# AUTHOR SHAPE
+# =============================================================================
+
+lit:AuthorShape a sh:NodeShape ;
+    sh:targetClass lit:Author ;
+    rdfs:label "Author Shape"@en ;
+    rdfs:comment "Constraints for Author entities"@en ;
+    
+    # Required: name
+    sh:property [
+        sh:path lit:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Author must have exactly one non-empty name"@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    
+    # Optional: birth date (max 1, must be date)
+    sh:property [
+        sh:path lit:birthDate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message "Birth date must be a valid xsd:date"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: death date (max 1, must be date)
+    sh:property [
+        sh:path lit:deathDate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message "Death date must be a valid xsd:date"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: birth place (must reference a Location)
+    sh:property [
+        sh:path lit:birthPlace ;
+        sh:maxCount 1 ;
+        sh:class lit:Location ;
+        sh:message "Birth place must be a Location"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: death place (must reference a Location)
+    sh:property [
+        sh:path lit:deathPlace ;
+        sh:maxCount 1 ;
+        sh:class lit:Location ;
+        sh:message "Death place must be a Location"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: influenced by (must reference other Authors)
+    sh:property [
+        sh:path lit:influencedBy ;
+        sh:class lit:Author ;
+        sh:message "influencedBy must reference an Author"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: student of (must reference other Authors)
+    sh:property [
+        sh:path lit:studentOf ;
+        sh:class lit:Author ;
+        sh:message "studentOf must reference an Author"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: citizenship (must reference a Location)
+    sh:property [
+        sh:path lit:citizenship ;
+        sh:class lit:Location ;
+        sh:message "citizenship must reference a Location"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: part of movement (must reference a LiteraryMovement)
+    sh:property [
+        sh:path lit:partOfMovement ;
+        sh:class lit:LiteraryMovement ;
+        sh:message "partOfMovement must reference a LiteraryMovement"@en ;
+        sh:severity sh:Info ;
+    ] ;
+    
+    # Optional: Wikidata ID (string pattern Q followed by numbers)
+    sh:property [
+        sh:path lit:wikidataId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^Q[0-9]+$" ;
+        sh:message "Wikidata ID must match pattern Q followed by numbers (e.g., Q23434)"@en ;
+        sh:severity sh:Warning ;
+    ] .
+
+
+# =============================================================================
+# LITERARY WORK SHAPE
+# =============================================================================
+
+lit:LiteraryWorkShape a sh:NodeShape ;
+    sh:targetClass lit:LiteraryWork ;
+    rdfs:label "Literary Work Shape"@en ;
+    rdfs:comment "Constraints for LiteraryWork entities"@en ;
+    
+    # Required: title
+    sh:property [
+        sh:path lit:title ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Literary work must have exactly one non-empty title"@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    
+    # Required: written by (at least one author)
+    sh:property [
+        sh:path lit:writtenBy ;
+        sh:minCount 1 ;
+        sh:class lit:Author ;
+        sh:message "Literary work must have at least one author"@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    
+    # Optional: publication date
+    sh:property [
+        sh:path lit:publicationDate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message "Publication date must be a valid xsd:date"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: publication year
+    sh:property [
+        sh:path lit:publicationYear ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:gYear ;
+        sh:message "Publication year must be a valid xsd:gYear"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: genre (must reference a Genre)
+    sh:property [
+        sh:path lit:hasGenre ;
+        sh:class lit:Genre ;
+        sh:message "hasGenre must reference a Genre"@en ;
+        sh:severity sh:Info ;
+    ] ;
+    
+    # Optional: publication place
+    sh:property [
+        sh:path lit:publicationPlace ;
+        sh:class lit:Location ;
+        sh:message "publicationPlace must reference a Location"@en ;
+        sh:severity sh:Info ;
+    ] ;
+    
+    # Optional: narrative location (story setting)
+    sh:property [
+        sh:path lit:narrativeLocation ;
+        sh:class lit:Location ;
+        sh:message "narrativeLocation must reference a Location"@en ;
+        sh:severity sh:Info ;
+    ] ;
+    
+    # Optional: published by
+    sh:property [
+        sh:path lit:publishedBy ;
+        sh:class lit:Publisher ;
+        sh:message "publishedBy must reference a Publisher"@en ;
+        sh:severity sh:Info ;
+    ] ;
+    
+    # Optional: Wikidata ID
+    sh:property [
+        sh:path lit:wikidataId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^Q[0-9]+$" ;
+        sh:message "Wikidata ID must match pattern Q followed by numbers"@en ;
+        sh:severity sh:Warning ;
+    ] .
+
+
+# =============================================================================
+# NOVEL SHAPE (inherits from LiteraryWork)
+# =============================================================================
+
+lit:NovelShape a sh:NodeShape ;
+    sh:targetClass lit:Novel ;
+    rdfs:label "Novel Shape"@en ;
+    rdfs:comment "Constraints specific to Novel entities"@en ;
+    
+    # Inherits all LiteraryWork constraints implicitly
+    # Add novel-specific constraints here if needed
+    .
+
+
+# =============================================================================
+# GENRE SHAPE
+# =============================================================================
+
+lit:GenreShape a sh:NodeShape ;
+    sh:targetClass lit:Genre ;
+    rdfs:label "Genre Shape"@en ;
+    rdfs:comment "Constraints for Genre entities"@en ;
+    
+    # Required: label
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:message "Genre must have at least one label"@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    
+    # Optional: Wikidata ID
+    sh:property [
+        sh:path lit:wikidataId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^Q[0-9]+$" ;
+        sh:message "Wikidata ID must match pattern Q followed by numbers"@en ;
+        sh:severity sh:Warning ;
+    ] .
+
+
+# =============================================================================
+# LOCATION SHAPE
+# =============================================================================
+
+lit:LocationShape a sh:NodeShape ;
+    sh:targetClass lit:Location ;
+    rdfs:label "Location Shape"@en ;
+    rdfs:comment "Constraints for Location entities"@en ;
+    
+    # Required: name
+    sh:property [
+        sh:path lit:name ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Location must have a name"@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    
+    # Optional: latitude (must be decimal, -90 to 90)
+    sh:property [
+        sh:path lit:latitude ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -90 ;
+        sh:maxInclusive 90 ;
+        sh:message "Latitude must be a decimal between -90 and 90"@en ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Optional: longitude (must be decimal, -180 to 180)
+    sh:property [
+        sh:path lit:longitude ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -180 ;
+        sh:maxInclusive 180 ;
+        sh:message "Longitude must be a decimal between -180 and 180"@en ;
+        sh:severity sh:Warning ;
+    ] .
+
+
+# =============================================================================
+# LITERARY MOVEMENT SHAPE
+# =============================================================================
+
+lit:LiteraryMovementShape a sh:NodeShape ;
+    sh:targetClass lit:LiteraryMovement ;
+    rdfs:label "Literary Movement Shape"@en ;
+    rdfs:comment "Constraints for LiteraryMovement entities"@en ;
+    
+    # Required: label
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:message "Literary movement must have at least one label"@en ;
+        sh:severity sh:Violation ;
+    ] ;
+    
+    # Optional: Wikidata ID
+    sh:property [
+        sh:path lit:wikidataId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^Q[0-9]+$" ;
+        sh:message "Wikidata ID must match pattern Q followed by numbers"@en ;
+        sh:severity sh:Warning ;
+    ] .
+
+
+# =============================================================================
+# PUBLISHER SHAPE
+# =============================================================================
+
+lit:PublisherShape a sh:NodeShape ;
+    sh:targetClass lit:Publisher ;
+    rdfs:label "Publisher Shape"@en ;
+    rdfs:comment "Constraints for Publisher entities"@en ;
+    
+    # Required: name
+    sh:property [
+        sh:path lit:name ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Publisher must have a name"@en ;
+        sh:severity sh:Violation ;
+    ] .
+
+
+# =============================================================================
+# AWARD SHAPE
+# =============================================================================
+
+lit:AwardShape a sh:NodeShape ;
+    sh:targetClass lit:Award ;
+    rdfs:label "Award Shape"@en ;
+    rdfs:comment "Constraints for Award entities"@en ;
+    
+    # Required: label
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:message "Award must have at least one label"@en ;
+        sh:severity sh:Violation ;
+    ] .

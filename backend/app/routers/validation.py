@@ -13,10 +13,17 @@ from app.models.validation import (
     SchemaInfo,
     ClassMapping,
     PropertyMapping,
+    # SHACL models
+    SHACLValidationRequest,
+    SHACLJsonValidationRequest,
+    SHACLValidationResult,
+    SHACLShapeInfo,
+    SHACLShapesInfo,
 )
 from app.services.schema_mapper import get_schema_mapper
 from app.services.sparql_generator import get_sparql_generator
 from app.services.response_validator import get_response_validator
+from app.services.shacl_validator import get_shacl_validator
 
 logger = logging.getLogger(__name__)
 
@@ -546,4 +553,352 @@ async def get_entity_type_summary(entity_type: str) -> dict[str, Any]:
         raise
     except Exception as e:
         logger.error(f"Error getting entity summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# SHACL VALIDATION ENDPOINTS
+# =============================================================================
+
+@router.get("/shacl/shapes", response_model=SHACLShapesInfo)
+async def get_shacl_shapes() -> SHACLShapesInfo:
+    """
+    Get information about all SHACL shapes.
+    
+    Returns detailed information about each shape including:
+    - Shape URI and name
+    - Target class
+    - Property constraints with cardinality, datatypes, etc.
+    
+    SHACL (Shapes Constraint Language) is a W3C standard for validating
+    RDF data. Shapes define constraints that data must conform to.
+    
+    Example response:
+    ```json
+    {
+        "shapes": [
+            {
+                "shape_name": "AuthorShape",
+                "target_class": "lit:Author",
+                "constraints": [
+                    {"path": "name", "minCount": 1, "datatype": "string"}
+                ]
+            }
+        ],
+        "total_shapes": 8
+    }
+    ```
+    """
+    try:
+        validator = get_shacl_validator()
+        return validator.get_shapes_info()
+    except Exception as e:
+        logger.error(f"Error getting SHACL shapes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/shacl/shapes/{shape_name}", response_model=SHACLShapeInfo)
+async def get_shacl_shape(shape_name: str) -> SHACLShapeInfo:
+    """
+    Get information about a specific SHACL shape.
+    
+    Args:
+        shape_name: Name of the shape (e.g., "AuthorShape", "LiteraryWorkShape")
+                   Can also be the entity type (e.g., "Author") - "Shape" suffix will be added.
+    
+    Returns:
+        Detailed shape information including all constraints.
+    """
+    try:
+        validator = get_shacl_validator()
+        
+        # Handle both "Author" and "AuthorShape" formats
+        if not shape_name.endswith("Shape"):
+            shape_name = f"{shape_name}Shape"
+        
+        # Remove "Shape" to get entity type
+        entity_type = shape_name.replace("Shape", "")
+        
+        shape = validator.get_shape_for_type(entity_type)
+        if not shape:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Shape not found: {shape_name}"
+            )
+        
+        return shape
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting SHACL shape {shape_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/shacl/validate", response_model=SHACLValidationResult)
+async def validate_rdf_with_shacl(request: SHACLValidationRequest) -> SHACLValidationResult:
+    """
+    Validate RDF data against SHACL shapes.
+    
+    Accepts RDF data in various formats (Turtle, JSON-LD, N-Triples, RDF/XML)
+    and validates it against the literature ontology SHACL shapes.
+    
+    SHACL validation provides:
+    - W3C-standard constraint checking
+    - Multiple severity levels (Violation, Warning, Info)
+    - Rich constraint types (cardinality, datatypes, patterns, class membership)
+    - Detailed violation reports
+    
+    Example request:
+    ```json
+    {
+        "data": "@prefix lit: <http://literature-explorer.org/ontology#> .\\n...",
+        "data_format": "turtle",
+        "target_shapes": ["AuthorShape"],
+        "inference": false
+    }
+    ```
+    
+    Example response:
+    ```json
+    {
+        "conforms": false,
+        "violations": [
+            {
+                "focus_node": "http://literature-explorer.org/data/author/Q23434",
+                "result_path": "lit:name",
+                "severity": "Violation",
+                "message": "Author must have exactly one non-empty name"
+            }
+        ],
+        "violation_count": 1,
+        "warning_count": 0
+    }
+    ```
+    """
+    try:
+        validator = get_shacl_validator()
+        return validator.validate_rdf(
+            data=request.data,
+            data_format=request.data_format,
+            target_shapes=request.target_shapes,
+            inference=request.inference,
+            abort_on_first=request.abort_on_first
+        )
+    except Exception as e:
+        logger.error(f"SHACL validation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/shacl/validate/json", response_model=SHACLValidationResult)
+async def validate_json_with_shacl(request: SHACLJsonValidationRequest) -> SHACLValidationResult:
+    """
+    Validate JSON data against SHACL shapes.
+    
+    Converts JSON data to RDF and validates against the appropriate SHACL shape.
+    This is useful for validating API responses or user input before storing.
+    
+    The JSON data is automatically converted to RDF triples:
+    - Entity type determines the rdf:type
+    - JSON keys are mapped to ontology properties
+    - Values are converted to appropriate literals or references
+    
+    Example request:
+    ```json
+    {
+        "entity_type": "Author",
+        "data": {
+            "qid": "Q23434",
+            "name": "Ernest Hemingway",
+            "birthDate": "1899-07-21",
+            "birthPlace": {"qid": "Q183287", "name": "Oak Park"}
+        },
+        "include_related": false
+    }
+    ```
+    
+    Example response:
+    ```json
+    {
+        "conforms": true,
+        "violations": [],
+        "violation_count": 0,
+        "shapes_used": ["AuthorShape"]
+    }
+    ```
+    """
+    try:
+        validator = get_shacl_validator()
+        return validator.validate_json(
+            entity_type=request.entity_type,
+            data=request.data,
+            include_related=request.include_related
+        )
+    except Exception as e:
+        logger.error(f"SHACL JSON validation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/shacl/reload")
+async def reload_shacl_shapes() -> dict[str, str]:
+    """
+    Reload SHACL shapes from file.
+    
+    Use this after updating the literature_shapes.ttl file to refresh
+    the in-memory shapes without restarting the server.
+    
+    Returns:
+        Confirmation message with shape count.
+    """
+    try:
+        validator = get_shacl_validator()
+        validator.reload_shapes()
+        shapes_info = validator.get_shapes_info()
+        return {
+            "message": "SHACL shapes reloaded successfully",
+            "total_shapes": str(shapes_info.total_shapes)
+        }
+    except Exception as e:
+        logger.error(f"Error reloading SHACL shapes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/shacl/constraints/{entity_type}")
+async def get_shacl_constraints(entity_type: str) -> dict[str, Any]:
+    """
+    Get SHACL constraints for a specific entity type.
+    
+    Returns a simplified view of the constraints for the entity type,
+    organized by property. Useful for building validation UI or
+    understanding what data is required.
+    
+    Args:
+        entity_type: Entity type (Author, LiteraryWork, Novel, etc.)
+    
+    Example response:
+    ```json
+    {
+        "entity_type": "Author",
+        "shape_name": "AuthorShape",
+        "required_properties": ["name"],
+        "optional_properties": ["birthDate", "deathDate", "birthPlace"],
+        "constraints_by_property": {
+            "name": {
+                "required": true,
+                "datatype": "string",
+                "minLength": 1
+            },
+            "birthDate": {
+                "required": false,
+                "datatype": "date",
+                "severity": "Warning"
+            }
+        }
+    }
+    ```
+    """
+    try:
+        validator = get_shacl_validator()
+        shape = validator.get_shape_for_type(entity_type)
+        
+        if not shape:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No SHACL shape found for entity type: {entity_type}"
+            )
+        
+        # Organize constraints by property
+        required_props = []
+        optional_props = []
+        constraints_by_property = {}
+        
+        for constraint in shape.constraints:
+            path = constraint.get("path", "unknown")
+            
+            # Check if required
+            min_count = constraint.get("minCount", 0)
+            is_required = min_count > 0
+            
+            if is_required:
+                required_props.append(path)
+            else:
+                optional_props.append(path)
+            
+            # Build property constraint info
+            prop_constraint = {"required": is_required}
+            
+            if "datatype" in constraint:
+                prop_constraint["datatype"] = constraint["datatype"]
+            if "class" in constraint:
+                prop_constraint["class"] = constraint["class"]
+            if "minCount" in constraint:
+                prop_constraint["minCount"] = constraint["minCount"]
+            if "maxCount" in constraint:
+                prop_constraint["maxCount"] = constraint["maxCount"]
+            if "minLength" in constraint:
+                prop_constraint["minLength"] = constraint["minLength"]
+            if "maxLength" in constraint:
+                prop_constraint["maxLength"] = constraint["maxLength"]
+            if "pattern" in constraint:
+                prop_constraint["pattern"] = constraint["pattern"]
+            if "severity" in constraint:
+                prop_constraint["severity"] = constraint["severity"]
+            if "message" in constraint:
+                prop_constraint["message"] = constraint["message"]
+            
+            constraints_by_property[path] = prop_constraint
+        
+        return {
+            "entity_type": entity_type,
+            "shape_name": shape.shape_name,
+            "target_class": shape.target_class,
+            "required_properties": required_props,
+            "optional_properties": optional_props,
+            "constraints_by_property": constraints_by_property,
+            "total_constraints": len(shape.constraints)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting SHACL constraints for {entity_type}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/shacl/validate/sample/{entity_type}")
+async def validate_sample_data(
+    entity_type: str,
+    name: str = Query(..., description="Name of the entity"),
+    birth_date: str | None = Query(None, description="Birth date (YYYY-MM-DD format)"),
+    death_date: str | None = Query(None, description="Death date (YYYY-MM-DD format)")
+) -> SHACLValidationResult:
+    """
+    Validate sample data for quick testing.
+    
+    Provides a simple way to test SHACL validation without constructing
+    a full request body. Primarily for testing Author entities.
+    
+    Args:
+        entity_type: Type of entity (Author, LiteraryWork, etc.)
+        name: Name of the entity
+        birth_date: Optional birth date
+        death_date: Optional death date
+    
+    Example:
+        POST /validation/shacl/validate/sample/Author?name=Hemingway&birth_date=1899-07-21
+    """
+    try:
+        validator = get_shacl_validator()
+        
+        data = {"name": name}
+        if birth_date:
+            data["birthDate"] = birth_date
+        if death_date:
+            data["deathDate"] = death_date
+        
+        return validator.validate_json(
+            entity_type=entity_type,
+            data=data,
+            include_related=False
+        )
+    except Exception as e:
+        logger.error(f"SHACL sample validation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

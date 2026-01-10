@@ -220,3 +220,220 @@ class BatchValidationRequest(BaseModel):
     entity_type: str = Field(..., description="Type of entities (Author, LiteraryWork, etc.)")
     data: list[dict[str, Any]] = Field(..., description="List of entities to validate")
     strict: bool = Field(False, description="Whether to treat warnings as errors")
+
+
+# =============================================================================
+# SHACL VALIDATION MODELS
+# =============================================================================
+
+class SHACLSeverity(str, Enum):
+    """SHACL severity levels (aligned with W3C standard)."""
+    VIOLATION = "Violation"  # sh:Violation - data is invalid
+    WARNING = "Warning"      # sh:Warning - potential issue
+    INFO = "Info"            # sh:Info - informational message
+
+
+class SHACLConstraintComponent(str, Enum):
+    """Common SHACL constraint component types."""
+    MIN_COUNT = "MinCountConstraintComponent"
+    MAX_COUNT = "MaxCountConstraintComponent"
+    DATATYPE = "DatatypeConstraintComponent"
+    CLASS = "ClassConstraintComponent"
+    NODE_KIND = "NodeKindConstraintComponent"
+    MIN_LENGTH = "MinLengthConstraintComponent"
+    MAX_LENGTH = "MaxLengthConstraintComponent"
+    PATTERN = "PatternConstraintComponent"
+    MIN_INCLUSIVE = "MinInclusiveConstraintComponent"
+    MAX_INCLUSIVE = "MaxInclusiveConstraintComponent"
+    MIN_EXCLUSIVE = "MinExclusiveConstraintComponent"
+    MAX_EXCLUSIVE = "MaxExclusiveConstraintComponent"
+    IN = "InConstraintComponent"
+    HAS_VALUE = "HasValueConstraintComponent"
+    CLOSED = "ClosedConstraintComponent"
+    OTHER = "Other"
+
+
+class SHACLValidationViolation(BaseModel):
+    """A single SHACL validation violation/result."""
+    
+    focus_node: str = Field(..., description="The focus node that was validated (e.g., entity URI)")
+    result_path: str | None = Field(None, description="The property path that failed validation")
+    value: str | None = Field(None, description="The actual value that caused the violation")
+    source_shape: str = Field(..., description="The shape that contains the constraint")
+    source_constraint: str | None = Field(None, description="The constraint component that was violated")
+    constraint_component: SHACLConstraintComponent = Field(
+        SHACLConstraintComponent.OTHER, 
+        description="Type of constraint violated"
+    )
+    severity: SHACLSeverity = Field(SHACLSeverity.VIOLATION, description="Severity level")
+    message: str = Field(..., description="Human-readable validation message")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "focus_node": "http://literature-explorer.org/data/author/Q23434",
+                "result_path": "http://literature-explorer.org/ontology#name",
+                "value": None,
+                "source_shape": "http://literature-explorer.org/ontology#AuthorShape",
+                "source_constraint": "MinCountConstraintComponent",
+                "constraint_component": "MinCountConstraintComponent",
+                "severity": "Violation",
+                "message": "Author must have exactly one non-empty name"
+            }
+        }
+
+
+class SHACLValidationResult(BaseModel):
+    """Result of SHACL validation for a single data graph."""
+    
+    conforms: bool = Field(..., description="Whether the data graph conforms to all shapes")
+    violations: list[SHACLValidationViolation] = Field(
+        default_factory=list, 
+        description="List of violations found"
+    )
+    violation_count: int = Field(0, description="Number of sh:Violation level results")
+    warning_count: int = Field(0, description="Number of sh:Warning level results")
+    info_count: int = Field(0, description="Number of sh:Info level results")
+    shapes_used: list[str] = Field(default_factory=list, description="Shapes that were evaluated")
+    validated_at: datetime = Field(default_factory=datetime.utcnow, description="When validation was performed")
+    validation_time_ms: float = Field(0.0, description="Time taken for validation in milliseconds")
+    
+    def add_violation(self, violation: SHACLValidationViolation) -> None:
+        """Add a violation and update counts."""
+        self.violations.append(violation)
+        if violation.severity == SHACLSeverity.VIOLATION:
+            self.violation_count += 1
+            self.conforms = False
+        elif violation.severity == SHACLSeverity.WARNING:
+            self.warning_count += 1
+        else:
+            self.info_count += 1
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "conforms": False,
+                "violations": [
+                    {
+                        "focus_node": "http://literature-explorer.org/data/author/Q23434",
+                        "result_path": "http://literature-explorer.org/ontology#name",
+                        "source_shape": "http://literature-explorer.org/ontology#AuthorShape",
+                        "severity": "Violation",
+                        "message": "Author must have exactly one non-empty name"
+                    }
+                ],
+                "violation_count": 1,
+                "warning_count": 0,
+                "info_count": 0,
+                "shapes_used": ["AuthorShape"],
+                "validated_at": "2025-01-10T12:00:00Z",
+                "validation_time_ms": 15.5
+            }
+        }
+
+
+class SHACLValidationRequest(BaseModel):
+    """Request to validate RDF data using SHACL shapes."""
+    
+    data: str = Field(..., description="RDF data in Turtle, JSON-LD, or N-Triples format")
+    data_format: str = Field("turtle", description="Format of the RDF data: turtle, json-ld, n-triples, xml")
+    target_shapes: list[str] | None = Field(
+        None, 
+        description="Specific shape names to validate against (e.g., ['AuthorShape']). If None, all shapes are used."
+    )
+    inference: bool = Field(
+        False, 
+        description="Whether to perform RDFS inference before validation"
+    )
+    abort_on_first: bool = Field(
+        False, 
+        description="Whether to abort validation after the first violation"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "data": """
+                    @prefix lit: <http://literature-explorer.org/ontology#> .
+                    @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+                    
+                    <http://literature-explorer.org/data/author/Q23434> a lit:Author ;
+                        lit:name "Ernest Hemingway"^^xsd:string ;
+                        lit:birthDate "1899-07-21"^^xsd:date .
+                """,
+                "data_format": "turtle",
+                "target_shapes": ["AuthorShape"],
+                "inference": False,
+                "abort_on_first": False
+            }
+        }
+
+
+class SHACLJsonValidationRequest(BaseModel):
+    """Request to validate JSON data (converted to RDF) using SHACL shapes."""
+    
+    entity_type: str = Field(..., description="Type of entity: Author, LiteraryWork, Novel, etc.")
+    data: dict[str, Any] = Field(..., description="JSON data to validate")
+    include_related: bool = Field(
+        False, 
+        description="Whether to validate related entities (e.g., birthPlace for Author)"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "entity_type": "Author",
+                "data": {
+                    "qid": "Q23434",
+                    "name": "Ernest Hemingway",
+                    "birthDate": "1899-07-21",
+                    "birthPlace": {"qid": "Q183287", "name": "Oak Park"}
+                },
+                "include_related": False
+            }
+        }
+
+
+class SHACLShapeInfo(BaseModel):
+    """Information about a SHACL shape."""
+    
+    shape_uri: str = Field(..., description="Full URI of the shape")
+    shape_name: str = Field(..., description="Local name of the shape")
+    target_class: str | None = Field(None, description="Target class for this shape")
+    label: str | None = Field(None, description="Human-readable label")
+    description: str | None = Field(None, description="Description of what this shape validates")
+    property_count: int = Field(0, description="Number of property constraints")
+    constraints: list[dict[str, Any]] = Field(
+        default_factory=list, 
+        description="List of constraint details"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "shape_uri": "http://literature-explorer.org/ontology#AuthorShape",
+                "shape_name": "AuthorShape",
+                "target_class": "http://literature-explorer.org/ontology#Author",
+                "label": "Author Shape",
+                "description": "Constraints for Author entities",
+                "property_count": 10,
+                "constraints": [
+                    {
+                        "path": "lit:name",
+                        "minCount": 1,
+                        "maxCount": 1,
+                        "datatype": "xsd:string",
+                        "severity": "Violation"
+                    }
+                ]
+            }
+        }
+
+
+class SHACLShapesInfo(BaseModel):
+    """Information about all SHACL shapes in the shapes graph."""
+    
+    shapes: list[SHACLShapeInfo] = Field(default_factory=list, description="List of all shapes")
+    total_shapes: int = Field(0, description="Total number of shapes")
+    shapes_file: str = Field(..., description="Path to the shapes file")
+    loaded_at: datetime = Field(default_factory=datetime.utcnow, description="When shapes were loaded")

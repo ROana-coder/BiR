@@ -16,6 +16,15 @@ from app.models.validation import (
     SchemaInfo,
     ValidationRequest,
     BatchValidationRequest,
+    # SHACL models
+    SHACLSeverity,
+    SHACLConstraintComponent,
+    SHACLValidationViolation,
+    SHACLValidationResult,
+    SHACLValidationRequest,
+    SHACLJsonValidationRequest,
+    SHACLShapeInfo,
+    SHACLShapesInfo,
 )
 
 __all__ = [
@@ -38,4 +47,13 @@ __all__ = [
     "SchemaInfo",
     "ValidationRequest",
     "BatchValidationRequest",
+    # SHACL models
+    "SHACLSeverity",
+    "SHACLConstraintComponent",
+    "SHACLValidationViolation",
+    "SHACLValidationResult",
+    "SHACLValidationRequest",
+    "SHACLJsonValidationRequest",
+    "SHACLShapeInfo",
+    "SHACLShapesInfo",
 ]
