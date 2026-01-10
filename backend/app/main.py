@@ -15,6 +15,7 @@ from app.routers import (
     recommendations_router,
 )
 from app.routers.ontology import router as ontology_router
+from app.routers.validation import router as validation_router
 
 # Configure logging
 logging.basicConfig(
@@ -76,6 +77,12 @@ app = FastAPI(
     - `/ontology/properties` - List all properties in the ontology
     - `/ontology/ttl` - Download the raw TTL file
     
+    ### Validation Endpoints (NEW!)
+    - `/validation/schema` - Get owl:equivalentClass/Property mappings
+    - `/validation/sparql/*` - Generate SPARQL queries from ontology schema
+    - `/validation/validate` - Validate data against ontology constraints
+    - `/validation/expected-properties/{type}` - Get expected properties for entity types
+    
     ## Features
     
     - **Search**: Query books by country, genre, time period (SPARQL-based)
@@ -114,6 +121,7 @@ app.include_router(graph_router)
 app.include_router(geo_router)
 app.include_router(recommendations_router)
 app.include_router(ontology_router)
+app.include_router(validation_router)
 
 
 @app.get("/", tags=["Health"])
