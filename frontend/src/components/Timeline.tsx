@@ -9,6 +9,13 @@ import type { Book } from '../types';
 interface TimelineProps {
     books: Book[];
     onBookClick?: (book: Book) => void;
+    /** Filter context for display */
+    filterContext?: {
+        country?: string | null;
+        genre?: string | null;
+        yearStart?: number | null;
+        yearEnd?: number | null;
+    };
 }
 
 interface TimelineEntry {
@@ -16,7 +23,7 @@ interface TimelineEntry {
     books: Book[];
 }
 
-export function Timeline({ books }: TimelineProps) {
+export function Timeline({ books, filterContext }: TimelineProps) {
     // Group books by decade
     const timeline = useMemo(() => {
         const grouped = new Map<number, Book[]>();
@@ -53,9 +60,30 @@ export function Timeline({ books }: TimelineProps) {
     const maxYear = timeline.length > 0 ? timeline[timeline.length - 1].year + 9 : 0;
     const peakDecade = timeline.reduce((max, curr) => (curr.books.length > max.books.length ? curr : max), timeline[0] || { year: 0, books: [] });
 
+    // Build dynamic title based on filters
+    const buildTitle = () => {
+        const parts: string[] = ['Timeline Analysis'];
+        
+        if (filterContext?.genre) {
+            parts.push(`of ${filterContext.genre}`);
+        }
+        
+        if (filterContext?.country) {
+            parts.push(`in ${filterContext.country}`);
+        }
+        
+        if (filterContext?.yearStart || filterContext?.yearEnd) {
+            const start = filterContext.yearStart || 'any';
+            const end = filterContext.yearEnd || 'present';
+            parts.push(`(${start} - ${end})`);
+        }
+        
+        return parts.join(' ');
+    };
+
     return (
         <div style={{ padding: 'var(--spacing-6)', overflowX: 'auto' }}>
-            <h3 style={{ marginBottom: 'var(--spacing-6)' }}>Timeline Analysis</h3>
+            <h3 style={{ marginBottom: 'var(--spacing-6)' }}>{buildTitle()}</h3>
 
             {/* Stats Summary */}
             <div style={{

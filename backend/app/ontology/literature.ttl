@@ -1,0 +1,489 @@
+@prefix : <http://literature-explorer.org/ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+# =============================================================================
+# ONTOLOGY METADATA
+# =============================================================================
+
+<http://literature-explorer.org/ontology> a owl:Ontology ;
+    rdfs:label "Literature Explorer Ontology"@en ;
+    rdfs:comment "An ontology for describing literary works, authors, genres, and their relationships."@en ;
+    owl:versionInfo "1.0.0" ;
+    dcterms:created "2026-01-10"^^xsd:date ;
+    dcterms:creator "Literature Explorer Project" ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> .
+
+# =============================================================================
+# CLASSES
+# =============================================================================
+
+# ----- Core Classes -----
+
+:LiteraryWork a owl:Class ;
+    rdfs:label "Literary Work"@en ;
+    rdfs:comment "A written creative work such as a novel, poem, play, or short story."@en ;
+    rdfs:subClassOf schema:CreativeWork ;
+    owl:equivalentClass wd:Q7725634 .
+
+:Author a owl:Class ;
+    rdfs:label "Author"@en ;
+    rdfs:comment "A person who writes literary works."@en ;
+    rdfs:subClassOf foaf:Person, schema:Person ;
+    owl:equivalentClass wd:Q482980 .
+
+:Genre a owl:Class ;
+    rdfs:label "Genre"@en ;
+    rdfs:comment "A category of literary composition characterized by style, form, or content."@en ;
+    owl:equivalentClass wd:Q223393 .
+
+:Location a owl:Class ;
+    rdfs:label "Location"@en ;
+    rdfs:comment "A geographic place relevant to literature (birthplace, setting, publication place)."@en ;
+    rdfs:subClassOf schema:Place .
+
+:LiteraryMovement a owl:Class ;
+    rdfs:label "Literary Movement"@en ;
+    rdfs:comment "A trend or movement in literature characterized by shared beliefs or practices."@en ;
+    owl:equivalentClass wd:Q3326717 .
+
+:Publisher a owl:Class ;
+    rdfs:label "Publisher"@en ;
+    rdfs:comment "An organization that publishes literary works."@en ;
+    rdfs:subClassOf schema:Organization ;
+    owl:equivalentClass wd:Q2085381 .
+
+:Award a owl:Class ;
+    rdfs:label "Literary Award"@en ;
+    rdfs:comment "An award given for literary achievement."@en ;
+    rdfs:subClassOf schema:Thing ;
+    owl:equivalentClass wd:Q378427 .
+
+# ----- Work Type Subclasses -----
+
+:Novel a owl:Class ;
+    rdfs:label "Novel"@en ;
+    rdfs:comment "A long narrative work of fiction."@en ;
+    rdfs:subClassOf :LiteraryWork ;
+    owl:equivalentClass wd:Q8261 .
+
+:ShortStory a owl:Class ;
+    rdfs:label "Short Story"@en ;
+    rdfs:comment "A brief work of fiction."@en ;
+    rdfs:subClassOf :LiteraryWork ;
+    owl:equivalentClass wd:Q49084 .
+
+:Poem a owl:Class ;
+    rdfs:label "Poem"@en ;
+    rdfs:comment "A literary composition written in verse."@en ;
+    rdfs:subClassOf :LiteraryWork ;
+    owl:equivalentClass wd:Q5185279 .
+
+:Play a owl:Class ;
+    rdfs:label "Play"@en ;
+    rdfs:comment "A dramatic work intended for theatrical performance."@en ;
+    rdfs:subClassOf :LiteraryWork ;
+    owl:equivalentClass wd:Q25379 .
+
+:Essay a owl:Class ;
+    rdfs:label "Essay"@en ;
+    rdfs:comment "A short piece of writing on a particular subject."@en ;
+    rdfs:subClassOf :LiteraryWork ;
+    owl:equivalentClass wd:Q35760 .
+
+# =============================================================================
+# OBJECT PROPERTIES
+# =============================================================================
+
+:writtenBy a owl:ObjectProperty ;
+    rdfs:label "written by"@en ;
+    rdfs:comment "Relates a literary work to its author."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range :Author ;
+    owl:equivalentProperty wdt:P50 ;
+    owl:inverseOf :wrote .
+
+:wrote a owl:ObjectProperty ;
+    rdfs:label "wrote"@en ;
+    rdfs:comment "Relates an author to their literary works."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :LiteraryWork ;
+    owl:inverseOf :writtenBy .
+
+:hasGenre a owl:ObjectProperty ;
+    rdfs:label "has genre"@en ;
+    rdfs:comment "Relates a literary work to its genre."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range :Genre ;
+    owl:equivalentProperty wdt:P136 .
+
+:influencedBy a owl:ObjectProperty ;
+    rdfs:label "influenced by"@en ;
+    rdfs:comment "Indicates that an author was influenced by another author."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :Author ;
+    owl:equivalentProperty wdt:P737 .
+
+:influenced a owl:ObjectProperty ;
+    rdfs:label "influenced"@en ;
+    rdfs:comment "Indicates that an author influenced another author."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :Author ;
+    owl:inverseOf :influencedBy .
+
+:studentOf a owl:ObjectProperty ;
+    rdfs:label "student of"@en ;
+    rdfs:comment "Indicates that an author studied under another author/teacher."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :Author ;
+    owl:equivalentProperty wdt:P1066 .
+
+:birthPlace a owl:ObjectProperty ;
+    rdfs:label "birth place"@en ;
+    rdfs:comment "The place where a person was born."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :Location ;
+    owl:equivalentProperty wdt:P19 .
+
+:deathPlace a owl:ObjectProperty ;
+    rdfs:label "death place"@en ;
+    rdfs:comment "The place where a person died."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :Location ;
+    owl:equivalentProperty wdt:P20 .
+
+:publicationPlace a owl:ObjectProperty ;
+    rdfs:label "publication place"@en ;
+    rdfs:comment "The place where a work was published."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range :Location ;
+    owl:equivalentProperty wdt:P291 .
+
+:narrativeLocation a owl:ObjectProperty ;
+    rdfs:label "narrative location"@en ;
+    rdfs:comment "The location where the story takes place."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range :Location ;
+    owl:equivalentProperty wdt:P840 .
+
+:partOfMovement a owl:ObjectProperty ;
+    rdfs:label "part of movement"@en ;
+    rdfs:comment "Indicates that an author or work is part of a literary movement."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( :Author :LiteraryWork ) ] ;
+    rdfs:range :LiteraryMovement ;
+    owl:equivalentProperty wdt:P135 .
+
+:publishedBy a owl:ObjectProperty ;
+    rdfs:label "published by"@en ;
+    rdfs:comment "The publisher of a literary work."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range :Publisher ;
+    owl:equivalentProperty wdt:P123 .
+
+:receivedAward a owl:ObjectProperty ;
+    rdfs:label "received award"@en ;
+    rdfs:comment "An award received by an author or work."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( :Author :LiteraryWork ) ] ;
+    rdfs:range :Award ;
+    owl:equivalentProperty wdt:P166 .
+
+:citizenship a owl:ObjectProperty ;
+    rdfs:label "citizenship"@en ;
+    rdfs:comment "The country of citizenship of an author."@en ;
+    rdfs:domain :Author ;
+    rdfs:range :Location ;
+    owl:equivalentProperty wdt:P27 .
+
+:countryOfOrigin a owl:ObjectProperty ;
+    rdfs:label "country of origin"@en ;
+    rdfs:comment "The country where a literary work originates."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range :Location ;
+    owl:equivalentProperty wdt:P495 .
+
+# =============================================================================
+# DATATYPE PROPERTIES
+# =============================================================================
+
+:wikidataId a owl:DatatypeProperty ;
+    rdfs:label "Wikidata ID"@en ;
+    rdfs:comment "The Wikidata QID for this entity."@en ;
+    rdfs:range xsd:string .
+
+:title a owl:DatatypeProperty ;
+    rdfs:label "title"@en ;
+    rdfs:comment "The title of a literary work."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf dc:title, schema:name .
+
+:name a owl:DatatypeProperty ;
+    rdfs:label "name"@en ;
+    rdfs:comment "The name of an entity."@en ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf foaf:name, schema:name .
+
+:publicationYear a owl:DatatypeProperty ;
+    rdfs:label "publication year"@en ;
+    rdfs:comment "The year a work was published."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range xsd:gYear .
+
+:publicationDate a owl:DatatypeProperty ;
+    rdfs:label "publication date"@en ;
+    rdfs:comment "The date a work was published."@en ;
+    rdfs:domain :LiteraryWork ;
+    rdfs:range xsd:date ;
+    owl:equivalentProperty wdt:P577 .
+
+:birthDate a owl:DatatypeProperty ;
+    rdfs:label "birth date"@en ;
+    rdfs:comment "The date of birth of a person."@en ;
+    rdfs:domain :Author ;
+    rdfs:range xsd:date ;
+    owl:equivalentProperty wdt:P569 .
+
+:deathDate a owl:DatatypeProperty ;
+    rdfs:label "death date"@en ;
+    rdfs:comment "The date of death of a person."@en ;
+    rdfs:domain :Author ;
+    rdfs:range xsd:date ;
+    owl:equivalentProperty wdt:P570 .
+
+:latitude a owl:DatatypeProperty ;
+    rdfs:label "latitude"@en ;
+    rdfs:comment "The latitude coordinate of a location."@en ;
+    rdfs:domain :Location ;
+    rdfs:range xsd:decimal .
+
+:longitude a owl:DatatypeProperty ;
+    rdfs:label "longitude"@en ;
+    rdfs:comment "The longitude coordinate of a location."@en ;
+    rdfs:domain :Location ;
+    rdfs:range xsd:decimal .
+
+:abstract a owl:DatatypeProperty ;
+    rdfs:label "abstract"@en ;
+    rdfs:comment "A brief summary or description."@en ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf dc:description .
+
+# =============================================================================
+# GENRE INSTANCES
+# =============================================================================
+
+:ScienceFiction a :Genre ;
+    rdfs:label "Science Fiction"@en ;
+    :wikidataId "Q24925" ;
+    owl:sameAs wd:Q24925 .
+
+:Fantasy a :Genre ;
+    rdfs:label "Fantasy"@en ;
+    :wikidataId "Q132311" ;
+    owl:sameAs wd:Q132311 .
+
+:Mystery a :Genre ;
+    rdfs:label "Mystery"@en ;
+    :wikidataId "Q5937792" ;
+    owl:sameAs wd:Q5937792 .
+
+:Romance a :Genre ;
+    rdfs:label "Romance"@en ;
+    :wikidataId "Q858330" ;
+    owl:sameAs wd:Q858330 .
+
+:Horror a :Genre ;
+    rdfs:label "Horror"@en ;
+    :wikidataId "Q200092" ;
+    owl:sameAs wd:Q200092 .
+
+:HistoricalFiction a :Genre ;
+    rdfs:label "Historical Fiction"@en ;
+    :wikidataId "Q1196408" ;
+    owl:sameAs wd:Q1196408 .
+
+:MagicRealism a :Genre ;
+    rdfs:label "Magic Realism"@en ;
+    :wikidataId "Q147516" ;
+    owl:sameAs wd:Q147516 .
+
+:LiteraryFiction a :Genre ;
+    rdfs:label "Literary Fiction"@en ;
+    :wikidataId "Q1792379" ;
+    owl:sameAs wd:Q1792379 .
+
+:Thriller a :Genre ;
+    rdfs:label "Thriller"@en ;
+    :wikidataId "Q182015" ;
+    owl:sameAs wd:Q182015 .
+
+:Biography a :Genre ;
+    rdfs:label "Biography"@en ;
+    :wikidataId "Q36279" ;
+    owl:sameAs wd:Q36279 .
+
+:Autobiography a :Genre ;
+    rdfs:label "Autobiography"@en ;
+    :wikidataId "Q4184" ;
+    owl:sameAs wd:Q4184 .
+
+:Poetry a :Genre ;
+    rdfs:label "Poetry"@en ;
+    :wikidataId "Q482" ;
+    owl:sameAs wd:Q482 .
+
+# =============================================================================
+# LITERARY MOVEMENT INSTANCES
+# =============================================================================
+
+:Modernism a :LiteraryMovement ;
+    rdfs:label "Modernism"@en ;
+    :wikidataId "Q37068" ;
+    owl:sameAs wd:Q37068 .
+
+:Postmodernism a :LiteraryMovement ;
+    rdfs:label "Postmodernism"@en ;
+    :wikidataId "Q47783" ;
+    owl:sameAs wd:Q47783 .
+
+:Romanticism a :LiteraryMovement ;
+    rdfs:label "Romanticism"@en ;
+    :wikidataId "Q37068" ;
+    owl:sameAs wd:Q37068 .
+
+:Realism a :LiteraryMovement ;
+    rdfs:label "Realism"@en ;
+    :wikidataId "Q11701" ;
+    owl:sameAs wd:Q11701 .
+
+:Naturalism a :LiteraryMovement ;
+    rdfs:label "Naturalism"@en ;
+    :wikidataId "Q213783" ;
+    owl:sameAs wd:Q213783 .
+
+:LostGeneration a :LiteraryMovement ;
+    rdfs:label "Lost Generation"@en ;
+    :wikidataId "Q1401288" ;
+    owl:sameAs wd:Q1401288 .
+
+:BeatGeneration a :LiteraryMovement ;
+    rdfs:label "Beat Generation"@en ;
+    :wikidataId "Q185145" ;
+    owl:sameAs wd:Q185145 .
+
+:Existentialism a :LiteraryMovement ;
+    rdfs:label "Existentialism"@en ;
+    :wikidataId "Q83216" ;
+    owl:sameAs wd:Q83216 .
+
+# =============================================================================
+# SAMPLE AUTHOR INSTANCES
+# =============================================================================
+
+:Hemingway a :Author ;
+    rdfs:label "Ernest Hemingway"@en ;
+    :name "Ernest Hemingway" ;
+    :wikidataId "Q23434" ;
+    owl:sameAs wd:Q23434 ;
+    :birthDate "1899-07-21"^^xsd:date ;
+    :deathDate "1961-07-02"^^xsd:date ;
+    :partOfMovement :LostGeneration, :Modernism ;
+    :influencedBy :Gertrude_Stein, :Ezra_Pound .
+
+:Gertrude_Stein a :Author ;
+    rdfs:label "Gertrude Stein"@en ;
+    :name "Gertrude Stein" ;
+    :wikidataId "Q188385" ;
+    owl:sameAs wd:Q188385 ;
+    :birthDate "1874-02-03"^^xsd:date ;
+    :deathDate "1946-07-27"^^xsd:date ;
+    :partOfMovement :LostGeneration, :Modernism ;
+    :influenced :Hemingway .
+
+:Ezra_Pound a :Author ;
+    rdfs:label "Ezra Pound"@en ;
+    :name "Ezra Pound" ;
+    :wikidataId "Q163366" ;
+    owl:sameAs wd:Q163366 ;
+    :birthDate "1885-10-30"^^xsd:date ;
+    :deathDate "1972-11-01"^^xsd:date ;
+    :partOfMovement :Modernism ;
+    :influenced :Hemingway .
+
+:Fitzgerald a :Author ;
+    rdfs:label "F. Scott Fitzgerald"@en ;
+    :name "F. Scott Fitzgerald" ;
+    :wikidataId "Q8662" ;
+    owl:sameAs wd:Q8662 ;
+    :birthDate "1896-09-24"^^xsd:date ;
+    :deathDate "1940-12-21"^^xsd:date ;
+    :partOfMovement :LostGeneration .
+
+:Garcia_Marquez a :Author ;
+    rdfs:label "Gabriel García Márquez"@en ;
+    :name "Gabriel García Márquez" ;
+    :wikidataId "Q5878" ;
+    owl:sameAs wd:Q5878 ;
+    :birthDate "1927-03-06"^^xsd:date ;
+    :deathDate "2014-04-17"^^xsd:date ;
+    :partOfMovement :MagicRealism .
+
+# =============================================================================
+# SAMPLE LITERARY WORK INSTANCES
+# =============================================================================
+
+:TheOldManAndTheSea a :Novel ;
+    rdfs:label "The Old Man and the Sea"@en ;
+    :title "The Old Man and the Sea" ;
+    :wikidataId "Q172850" ;
+    owl:sameAs wd:Q172850 ;
+    :writtenBy :Hemingway ;
+    :publicationYear "1952"^^xsd:gYear ;
+    :hasGenre :LiteraryFiction .
+
+:TheSunAlsoRises a :Novel ;
+    rdfs:label "The Sun Also Rises"@en ;
+    :title "The Sun Also Rises" ;
+    :wikidataId "Q662685" ;
+    owl:sameAs wd:Q662685 ;
+    :writtenBy :Hemingway ;
+    :publicationYear "1926"^^xsd:gYear ;
+    :hasGenre :LiteraryFiction ;
+    :partOfMovement :LostGeneration .
+
+:TheGreatGatsby a :Novel ;
+    rdfs:label "The Great Gatsby"@en ;
+    :title "The Great Gatsby" ;
+    :wikidataId "Q214371" ;
+    owl:sameAs wd:Q214371 ;
+    :writtenBy :Fitzgerald ;
+    :publicationYear "1925"^^xsd:gYear ;
+    :hasGenre :LiteraryFiction ;
+    :partOfMovement :LostGeneration .
+
+:OneHundredYearsOfSolitude a :Novel ;
+    rdfs:label "One Hundred Years of Solitude"@en ;
+    :title "One Hundred Years of Solitude" ;
+    :wikidataId "Q184121" ;
+    owl:sameAs wd:Q184121 ;
+    :writtenBy :Garcia_Marquez ;
+    :publicationYear "1967"^^xsd:gYear ;
+    :hasGenre :MagicRealism .
+
+:TheMakingOfAmericans a :Novel ;
+    rdfs:label "The Making of Americans"@en ;
+    :title "The Making of Americans" ;
+    :wikidataId "Q7749001" ;
+    owl:sameAs wd:Q7749001 ;
+    :writtenBy :Gertrude_Stein ;
+    :publicationYear "1925"^^xsd:gYear ;
+    :hasGenre :LiteraryFiction ;
+    :partOfMovement :Modernism .

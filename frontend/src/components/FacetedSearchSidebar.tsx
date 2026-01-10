@@ -7,7 +7,7 @@ import React, { useState, useCallback } from 'react';
 import type { FilterState } from '../types';
 
 // Common Wikidata QIDs for countries
-const COUNTRIES = [
+export const COUNTRIES = [
     { qid: 'Q30', label: 'United States' },
     { qid: 'Q142', label: 'France' },
     { qid: 'Q145', label: 'United Kingdom' },
@@ -23,7 +23,7 @@ const COUNTRIES = [
 ];
 
 // Common Wikidata QIDs for genres
-const GENRES = [
+export const GENRES = [
     { qid: 'Q8261', label: 'Novel' },
     { qid: 'Q49084', label: 'Short Story' },
     { qid: 'Q482', label: 'Poetry' },

@@ -56,6 +56,6 @@ WHERE {
   {# Ensure targets are humans (authors) #}
   ?target wdt:P31 wd:Q5.
   
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,it,fr,de,es,auto". }
 }
 LIMIT {{ limit | default(500) }}

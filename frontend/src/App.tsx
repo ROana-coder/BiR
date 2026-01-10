@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { FacetedSearchSidebar } from './components/FacetedSearchSidebar';
+import { FacetedSearchSidebar, COUNTRIES, GENRES } from './components/FacetedSearchSidebar';
 import { ForceGraph } from './components/ForceGraph';
 import { BooksForceGraph } from './components/BooksForceGraph';
 import { AuthorWorksList } from './components/AuthorWorksList';
@@ -68,6 +68,19 @@ function AppContent() {
             book.author_qids.forEach((qid) => qids.add(qid));
         });
         return Array.from(qids); // Limit removed per user request
+    }, [books]);
+
+    // Create author QID to name mapping for ForceGraph
+    const authorNames = React.useMemo(() => {
+        const names = new Map<string, string>();
+        books.forEach((book) => {
+            book.author_qids.forEach((qid, index) => {
+                if (!names.has(qid) && book.authors[index]) {
+                    names.set(qid, book.authors[index]);
+                }
+            });
+        });
+        return names;
     }, [books]);
 
     // Extract book QIDs for settings layer
@@ -173,7 +186,26 @@ function AppContent() {
 
         switch (activeTab) {
             case 'timeline':
-                return <Timeline books={books} onBookClick={handleBookClick} />;
+                // Look up labels for QIDs
+                const countryLabel = filters.country 
+                    ? COUNTRIES.find(c => c.qid === filters.country)?.label || filters.country
+                    : null;
+                const genreLabel = filters.genre
+                    ? GENRES.find(g => g.qid === filters.genre)?.label || filters.genre
+                    : null;
+                
+                return (
+                    <Timeline 
+                        books={books} 
+                        onBookClick={handleBookClick}
+                        filterContext={{
+                            country: countryLabel,
+                            genre: genreLabel,
+                            yearStart: filters.yearStart,
+                            yearEnd: filters.yearEnd,
+                        }}
+                    />
+                );
 
             case 'graph':
                 if (graphLoading && graphMode === 'influence') return <LoadingState message="Building citation network..." />;
@@ -204,7 +236,8 @@ function AppContent() {
                                     width={1200}
                                     height={800}
                                     onNodeClick={handleNodeClick}
-                                    highlightedNodeIds={authorQids} // Pass filtered authors to highlight
+                                    highlightedNodeIds={authorQids}
+                                    authorNames={authorNames}
                                 />
                             ) : (
                                 <BooksForceGraph

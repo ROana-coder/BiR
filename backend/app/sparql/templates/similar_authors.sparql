@@ -1,0 +1,63 @@
+{# SPARQL template for finding similar authors using shared properties #}
+{# Uses OPTIONAL patterns to find authors with similar characteristics #}
+
+SELECT DISTINCT ?similarAuthor ?similarAuthorLabel ?sharedProperty ?sharedValue ?sharedValueLabel
+WHERE {
+  # Get properties of the source author
+  BIND(wd:{{ author_qid }} AS ?sourceAuthor)
+  
+  {
+    # Same nationality (P27)
+    ?sourceAuthor wdt:P27 ?nationality.
+    ?similarAuthor wdt:P27 ?nationality.
+    BIND("nationality" AS ?sharedProperty)
+    BIND(?nationality AS ?sharedValue)
+  }
+  UNION
+  {
+    # Same literary movement (P135)
+    ?sourceAuthor wdt:P135 ?movement.
+    ?similarAuthor wdt:P135 ?movement.
+    BIND("movement" AS ?sharedProperty)
+    BIND(?movement AS ?sharedValue)
+  }
+  UNION
+  {
+    # Same genre (via their works)
+    ?sourceWork wdt:P50 ?sourceAuthor.
+    ?sourceWork wdt:P136 ?genre.
+    ?similarWork wdt:P50 ?similarAuthor.
+    ?similarWork wdt:P136 ?genre.
+    BIND("genre" AS ?sharedProperty)
+    BIND(?genre AS ?sharedValue)
+  }
+  UNION
+  {
+    # Same birth decade
+    ?sourceAuthor wdt:P569 ?sourceBirth.
+    ?similarAuthor wdt:P569 ?similarBirth.
+    BIND(FLOOR(YEAR(?sourceBirth) / 10) * 10 AS ?sourceDecade)
+    BIND(FLOOR(YEAR(?similarBirth) / 10) * 10 AS ?similarDecade)
+    FILTER(?sourceDecade = ?similarDecade)
+    BIND("birth_decade" AS ?sharedProperty)
+    BIND(?sourceDecade AS ?sharedValue)
+  }
+  UNION
+  {
+    # Influenced by same author
+    ?sourceAuthor wdt:P737 ?influence.
+    ?similarAuthor wdt:P737 ?influence.
+    BIND("influenced_by" AS ?sharedProperty)
+    BIND(?influence AS ?sharedValue)
+  }
+  
+  # Ensure similar author is human and different from source
+  ?similarAuthor wdt:P31 wd:Q5.
+  FILTER(?similarAuthor != ?sourceAuthor)
+  
+  # Ensure similar author is also a writer
+  ?similarAuthor wdt:P106/wdt:P279* wd:Q36180.
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,it,fr,de,es,auto". }
+}
+LIMIT {{ limit | default(100) }}

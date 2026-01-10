@@ -29,6 +29,54 @@ Literature Explorer is a sophisticated web application that enables users to exp
 - [Frontend README](./frontend/README.md) - Frontend components and setup
 - [API Reference](./docs/API_REFERENCE.md) - Complete API endpoint documentation
 - [Wikidata Guide](./docs/WIKIDATA_GUIDE.md) - SPARQL queries and Wikidata integration
+- [RDF Knowledge Model](./docs/RDF_KNOWLEDGE_MODEL.md) - RDF vocabularies and ontologies used
+
+---
+
+## 🌐 RDF & Semantic Web Compliance
+
+**All data in this application is described in RDF (Resource Description Framework)** and queried using **SPARQL 1.1**, the W3C standard query language for RDF data.
+
+### Knowledge Models & Ontologies Used
+
+| Vocabulary | Namespace | Usage |
+|------------|-----------|-------|
+| **Wikidata** | `wd:`, `wdt:` | Core entity types and properties |
+| **Schema.org** | `schema:` | CreativeWork, Person, Place |
+| **Dublin Core** | `dc:`, `dcterms:` | Bibliographic metadata |
+| **FOAF** | `foaf:` | Person and social relationships |
+| **GeoSPARQL** | `geo:`, `geof:` | Geographic coordinates and queries |
+| **RDFS/OWL** | `rdfs:`, `owl:` | Labels, descriptions, class hierarchies |
+
+### Wikidata Properties (RDF Predicates)
+
+| Property | PID | Description |
+|----------|-----|-------------|
+| `wdt:P31` | Instance of | Type classification (Book, Human) |
+| `wdt:P50` | Author | Links works to creators |
+| `wdt:P577` | Publication date | When a work was published |
+| `wdt:P136` | Genre | Literary genre classification |
+| `wdt:P737` | Influenced by | Intellectual influence relationships |
+| `wdt:P1066` | Student of | Teacher-student relationships |
+| `wdt:P27` | Nationality | Country of citizenship |
+| `wdt:P19` | Place of birth | Geographic birthplace |
+| `wdt:P625` | Coordinates | Geographic coordinates (GeoSPARQL) |
+| `wdt:P840` | Narrative location | Story setting locations |
+
+### SPARQL Query Templates
+
+The application uses Jinja2-templated SPARQL queries located in `/backend/app/sparql/templates/`:
+
+| Template | Purpose |
+|----------|---------|
+| `search_books.sparql` | Search literary works with filters |
+| `author_graph.sparql` | Build author influence networks |
+| `geo_locations.sparql` | Query geographic coordinates |
+| `get_author.sparql` | Fetch author biographical data |
+| `genre_taxonomy.sparql` | Query genre hierarchies |
+| `literary_movements.sparql` | Find literary movement data |
+| `similar_authors.sparql` | Discover related authors |
+| `timeline_stats.sparql` | Aggregate publication statistics |
 
 ---
 

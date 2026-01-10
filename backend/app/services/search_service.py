@@ -158,9 +158,16 @@ class SearchService:
             author_qid = row.get("author")
             author_label = row.get("authorLabel")
             if author_qid and author_qid not in book.author_qids:
-                if author_label:
+                # Check if we have a real label (not just the QID as fallback)
+                # Wikidata returns QID as label when no label exists
+                if author_label and not author_label.startswith("Q"):
                     book.author_qids.append(author_qid)
                     book.authors.append(author_label)
+                elif author_label:
+                    # We have a QID as label - still add but mark as unknown
+                    # This ensures arrays stay aligned
+                    book.author_qids.append(author_qid)
+                    book.authors.append(f"Unknown Author ({author_qid})")
         
         return list(books_map.values())
     

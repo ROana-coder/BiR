@@ -1,0 +1,45 @@
+{# SPARQL template for fetching author works with detailed metadata #}
+{# Uses multiple Wikidata properties for comprehensive work information #}
+
+SELECT ?work ?workLabel ?workDescription ?pubDate ?genre ?genreLabel 
+       ?language ?languageLabel ?publisher ?publisherLabel
+       (GROUP_CONCAT(DISTINCT ?awardLabel; separator=", ") AS ?awards)
+WHERE {
+  # Works by the specified author
+  ?work wdt:P50 wd:{{ author_qid }}.
+  
+  # Must be a literary work or book
+  VALUES ?type { wd:Q7725634 wd:Q571 wd:Q47461344 wd:Q277759 }
+  ?work wdt:P31 ?type.
+  
+  # Optional: publication date (P577)
+  OPTIONAL { ?work wdt:P577 ?pubDate. }
+  
+  # Optional: genre (P136)
+  OPTIONAL { ?work wdt:P136 ?genre. }
+  
+  # Optional: language of work (P407)
+  OPTIONAL { ?work wdt:P407 ?language. }
+  
+  # Optional: publisher (P123)
+  OPTIONAL { ?work wdt:P123 ?publisher. }
+  
+  # Optional: awards (P166)
+  OPTIONAL { 
+    ?work wdt:P166 ?award. 
+    ?award rdfs:label ?awardLabel.
+    FILTER(LANG(?awardLabel) = "en")
+  }
+  
+  # Optional: description
+  OPTIONAL {
+    ?work schema:description ?workDescription.
+    FILTER(LANG(?workDescription) = "en")
+  }
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,it,fr,de,es,auto". }
+}
+GROUP BY ?work ?workLabel ?workDescription ?pubDate ?genre ?genreLabel 
+         ?language ?languageLabel ?publisher ?publisherLabel
+ORDER BY ?pubDate
+LIMIT {{ limit | default(100) }}

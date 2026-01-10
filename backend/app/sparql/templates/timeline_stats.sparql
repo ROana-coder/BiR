@@ -1,0 +1,41 @@
+{# SPARQL template for timeline statistics by decade #}
+{# Aggregates publication counts for visualization #}
+
+SELECT ?decade (COUNT(DISTINCT ?book) AS ?bookCount) 
+       (COUNT(DISTINCT ?author) AS ?authorCount)
+       (SAMPLE(?genreLabel) AS ?topGenre)
+WHERE {
+  # Literary works
+  VALUES ?type { wd:Q7725634 wd:Q571 wd:Q47461344 }
+  ?book wdt:P31 ?type.
+  ?book wdt:P577 ?pubDate.
+  ?book wdt:P50 ?author.
+  
+  {% if country_qid %}
+  ?author wdt:P27 wd:{{ country_qid }}.
+  {% endif %}
+  
+  {% if genre_qid %}
+  ?book wdt:P136 wd:{{ genre_qid }}.
+  {% endif %}
+  
+  # Calculate decade
+  BIND(FLOOR(YEAR(?pubDate) / 10) * 10 AS ?decade)
+  
+  {% if year_start %}
+  FILTER(?decade >= {{ year_start }})
+  {% endif %}
+  
+  {% if year_end %}
+  FILTER(?decade <= {{ year_end }})
+  {% endif %}
+  
+  # Get genre for the book
+  OPTIONAL {
+    ?book wdt:P136 ?genre.
+    ?genre rdfs:label ?genreLabel.
+    FILTER(LANG(?genreLabel) = "en")
+  }
+}
+GROUP BY ?decade
+ORDER BY ?decade

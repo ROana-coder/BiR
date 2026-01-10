@@ -14,6 +14,8 @@ interface ForceGraphProps {
     height?: number;
     onNodeClick?: (node: GraphNode) => void;
     highlightedNodeIds?: string[];
+    /** Map of author QID to author name for adding missing nodes */
+    authorNames?: Map<string, string>;
 }
 
 interface SimulationNode extends GraphNode {
@@ -30,7 +32,7 @@ interface SimulationEdge extends GraphEdge {
     target: SimulationNode | string;
 }
 
-export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highlightedNodeIds }: ForceGraphProps) {
+export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highlightedNodeIds, authorNames }: ForceGraphProps) {
     const svgRef = useRef<SVGSVGElement>(null);
     const [nodes, setNodes] = useState<SimulationNode[]>([]);
     const [edges, setEdges] = useState<SimulationEdge[]>([]);
@@ -38,13 +40,63 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
     const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
     const simulationRef = useRef<d3.Simulation<SimulationNode, SimulationEdge> | null>(null);
 
+    // Filter graph data to only include nodes from query results, and add missing authors
+    const filteredData = useMemo(() => {
+        if (!highlightedNodeIds || highlightedNodeIds.length === 0) {
+            return data;
+        }
+
+        const allowedNodeIds = new Set(highlightedNodeIds);
+        
+        // Start with nodes from the graph data that are in the query results
+        const filteredNodes: GraphNode[] = data.nodes.filter(node => allowedNodeIds.has(node.id));
+        const existingNodeIds = new Set(filteredNodes.map(n => n.id));
+        
+        // Add missing authors as isolated nodes (authors in query results but not in graph data)
+        if (authorNames) {
+            for (const qid of highlightedNodeIds) {
+                if (!existingNodeIds.has(qid)) {
+                    const name = authorNames.get(qid);
+                    // Use the name if available and it's not just a QID
+                    const label = name && !name.startsWith('Q') ? name : `Unknown (${qid})`;
+                    filteredNodes.push({
+                        id: qid,
+                        label,
+                        type: 'author' as const,
+                        metadata: {},
+                        centrality: null,
+                        degree: null,
+                    });
+                }
+            }
+        }
+        
+        const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+        
+        // Filter edges to only include those between filtered nodes
+        const filteredEdges = data.edges.filter(edge => 
+            filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
+        );
+        
+        // Update central_nodes to only include filtered ones
+        const filteredCentralNodes = data.central_nodes.filter(id => filteredNodeIds.has(id));
+
+        return {
+            nodes: filteredNodes,
+            edges: filteredEdges,
+            node_count: filteredNodes.length,
+            edge_count: filteredEdges.length,
+            central_nodes: filteredCentralNodes,
+        };
+    }, [data, highlightedNodeIds, authorNames]);
+
     // Initialize simulation when data changes
     useEffect(() => {
-        if (!data.nodes.length) return;
+        if (!filteredData.nodes.length) return;
 
         // Create copies for simulation
-        const simNodes: SimulationNode[] = data.nodes.map((n) => ({ ...n }));
-        const simEdges: SimulationEdge[] = data.edges.map((e) => ({ ...e }));
+        const simNodes: SimulationNode[] = filteredData.nodes.map((n) => ({ ...n }));
+        const simEdges: SimulationEdge[] = filteredData.edges.map((e) => ({ ...e }));
 
         // Stop previous simulation
         if (simulationRef.current) {
@@ -75,7 +127,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
         return () => {
             simulation.stop();
         };
-    }, [data, width, height]);
+    }, [filteredData, width, height]);
 
     // Setup zoom behavior
     useEffect(() => {
@@ -125,12 +177,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
 
     // Get node color based on type and centrality
     const getNodeColor = useCallback((node: SimulationNode) => {
-        // Highlight if in the filtered list
-        if (highlightedNodeIds && highlightedNodeIds.includes(node.id)) {
-            return '#ef4444'; // Red-500
-        }
-
-        const isCentral = data.central_nodes.includes(node.id);
+        const isCentral = filteredData.central_nodes.includes(node.id);
         if (isCentral) return 'var(--color-accent)';
 
         switch (node.type) {
@@ -143,7 +190,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
             default:
                 return 'var(--color-text-secondary)';
         }
-    }, [data.central_nodes, highlightedNodeIds]);
+    }, [filteredData.central_nodes]);
 
     // Get node radius based on centrality
     const getNodeRadius = useCallback((node: SimulationNode) => {
@@ -163,7 +210,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
         return 'var(--color-edge)';
     }, [hoveredNode]);
 
-    if (!data.nodes.length) {
+    if (!filteredData.nodes.length) {
         return (
             <div className="empty-state">
                 <div className="empty-state__icon">🔗</div>
@@ -190,7 +237,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                     fontSize: 'var(--font-size-sm)',
                 }}
             >
-                <strong>{data.node_count}</strong> nodes · <strong>{data.edge_count}</strong> edges
+                <strong>{filteredData.node_count}</strong> nodes · <strong>{filteredData.edge_count}</strong> edges
             </div>
 
             {/* Legend */}
@@ -207,16 +254,12 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444' }} />
-                    Selected Author
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--color-node-author)' }} />
                     Author
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
                     <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--color-accent)' }} />
-                    High Centrality
+                    High Influence
                 </div>
             </div>
 
@@ -325,7 +368,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                                 className="graph-node__label"
                                 dy={getNodeRadius(node) + 14}
                                 textAnchor="middle"
-                                style={{ opacity: hoveredNode === node.id || data.central_nodes.includes(node.id) ? 1 : 0.7 }}
+                                style={{ opacity: hoveredNode === node.id || filteredData.central_nodes.includes(node.id) ? 1 : 0.7 }}
                             >
                                 {node.label.length > 20 ? node.label.slice(0, 18) + '...' : node.label}
                             </text>

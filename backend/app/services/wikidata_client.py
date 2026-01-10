@@ -86,8 +86,8 @@ class WikidataClient:
     
     @retry(
         retry=retry_if_exception_type((WikidataServiceError, WikidataRateLimitError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=2, min=5, max=60),
         reraise=True,
     )
     async def execute_query(
@@ -129,6 +129,10 @@ class WikidataClient:
                 if response.status_code == 429:
                     logger.warning("Rate limited by Wikidata, will retry...")
                     raise WikidataRateLimitError("Rate limit exceeded (429)")
+                
+                if response.status_code == 502:
+                    logger.warning("Wikidata bad gateway (502), will retry...")
+                    raise WikidataServiceError("Bad gateway (502)")
                 
                 if response.status_code == 503:
                     logger.warning("Wikidata service unavailable, will retry...")

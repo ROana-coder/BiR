@@ -99,18 +99,24 @@ class GraphService:
                 if not source_qid or not target_qid:
                     continue
                 
+                # Helper to get a proper label (not a QID fallback)
+                def get_label(label: str | None, qid: str) -> str:
+                    if label and not label.startswith("Q"):
+                        return label
+                    return f"Unknown ({qid})"
+                
                 # Add nodes
                 if source_qid not in all_nodes:
                     all_nodes[source_qid] = GraphNode(
                         id=source_qid,
-                        label=row.get("sourceLabel", source_qid),
+                        label=get_label(row.get("sourceLabel"), source_qid),
                         type=NodeType.AUTHOR,
                     )
                 
                 if target_qid not in all_nodes:
                     all_nodes[target_qid] = GraphNode(
                         id=target_qid,
-                        label=row.get("targetLabel", target_qid),
+                        label=get_label(row.get("targetLabel"), target_qid),
                         type=NodeType.AUTHOR,
                     )
                 

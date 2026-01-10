@@ -1,0 +1,24 @@
+{# SPARQL template for fetching genre taxonomy/hierarchy #}
+{# Uses RDFS subclass relationships to build genre tree #}
+
+SELECT DISTINCT ?genre ?genreLabel ?parent ?parentLabel ?description
+WHERE {
+  # Find genres that are subclasses of literary genre (Q223393)
+  ?genre wdt:P279* wd:Q223393.
+  
+  # Get parent class relationship
+  OPTIONAL { 
+    ?genre wdt:P279 ?parent.
+    ?parent wdt:P279* wd:Q223393.
+  }
+  
+  # Get description
+  OPTIONAL {
+    ?genre schema:description ?description.
+    FILTER(LANG(?description) = "en")
+  }
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,it,fr,de,es,auto". }
+}
+ORDER BY ?genreLabel
+LIMIT {{ limit | default(200) }}

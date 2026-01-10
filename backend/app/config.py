@@ -28,11 +28,11 @@ class Settings(BaseSettings):
     # Query settings
     default_query_limit: int = 100
     max_query_limit: int = 500
-    query_timeout: int = 55  # Wikidata has 60s timeout, leave margin
+    query_timeout: int = 120  # Increased: Wikidata is slow today
     
     # Retry settings
-    max_retries: int = 3
-    base_retry_delay: float = 1.0
+    max_retries: int = 5
+    base_retry_delay: float = 2.0
     
     # Clustering threshold
     geo_cluster_threshold: int = 1000

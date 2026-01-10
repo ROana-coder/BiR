@@ -1,0 +1,29 @@
+{# SPARQL template for fetching literary movements #}
+{# Queries P135 (movement) relationships for authors #}
+
+SELECT DISTINCT ?movement ?movementLabel ?description ?startDate ?endDate
+       (COUNT(DISTINCT ?author) AS ?authorCount)
+WHERE {
+  # Find movements that are literary/art movements
+  VALUES ?movementType { wd:Q968159 wd:Q3326717 wd:Q2198855 }
+  ?movement wdt:P31 ?movementType.
+  
+  # Find authors associated with this movement
+  ?author wdt:P135 ?movement.
+  ?author wdt:P31 wd:Q5.
+  
+  # Optional: movement dates
+  OPTIONAL { ?movement wdt:P580 ?startDate. }
+  OPTIONAL { ?movement wdt:P582 ?endDate. }
+  
+  # Optional: description
+  OPTIONAL {
+    ?movement schema:description ?description.
+    FILTER(LANG(?description) = "en")
+  }
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,it,fr,de,es,auto". }
+}
+GROUP BY ?movement ?movementLabel ?description ?startDate ?endDate
+ORDER BY DESC(?authorCount)
+LIMIT {{ limit | default(100) }}

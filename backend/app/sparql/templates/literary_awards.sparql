@@ -1,0 +1,50 @@
+{# SPARQL template for award statistics and winners #}
+{# Queries P166 (award received) with aggregations #}
+
+SELECT ?award ?awardLabel ?awardDescription 
+       (COUNT(DISTINCT ?winner) AS ?winnerCount)
+       (MIN(YEAR(?date)) AS ?firstYear)
+       (MAX(YEAR(?date)) AS ?lastYear)
+       (SAMPLE(?winnerLabel) AS ?exampleWinner)
+WHERE {
+  # Find literary awards
+  ?award wdt:P31/wdt:P279* wd:Q378427.  # Award or subclass
+  
+  # Filter to literature-related awards
+  {
+    ?award wdt:P101 wd:Q8242.  # Field of work: literature
+  }
+  UNION
+  {
+    ?award wdt:P31 wd:Q378427.
+    ?award rdfs:label ?label.
+    FILTER(CONTAINS(LCASE(?label), "liter") || CONTAINS(LCASE(?label), "book") || CONTAINS(LCASE(?label), "novel"))
+    FILTER(LANG(?label) = "en")
+  }
+  
+  # Find winners
+  ?winner wdt:P166 ?award.
+  
+  # Optional: award date
+  OPTIONAL {
+    ?winner p:P166 ?statement.
+    ?statement ps:P166 ?award.
+    ?statement pq:P585 ?date.
+  }
+  
+  # Get winner label for example
+  ?winner rdfs:label ?winnerLabel.
+  FILTER(LANG(?winnerLabel) = "en")
+  
+  # Optional: award description
+  OPTIONAL {
+    ?award schema:description ?awardDescription.
+    FILTER(LANG(?awardDescription) = "en")
+  }
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,it,fr,de,es,auto". }
+}
+GROUP BY ?award ?awardLabel ?awardDescription
+HAVING(COUNT(DISTINCT ?winner) >= {{ min_winners | default(5) }})
+ORDER BY DESC(?winnerCount)
+LIMIT {{ limit | default(50) }}

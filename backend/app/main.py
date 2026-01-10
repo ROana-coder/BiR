@@ -14,6 +14,7 @@ from app.routers import (
     geo_router,
     recommendations_router,
 )
+from app.routers.ontology import router as ontology_router
 
 # Configure logging
 logging.basicConfig(
@@ -58,11 +59,28 @@ app = FastAPI(
     description="""
     A high-performance API for exploring the Literature Explorer using Wikidata.
     
+    ## RDF & Semantic Web Compliance
+    
+    All data in this application is described in **RDF (Resource Description Framework)** 
+    based on the **Literature Explorer Ontology** and sourced from **Wikidata**.
+    
+    ### Knowledge Models Used
+    - **Literature Explorer Ontology**: Local TTL ontology for literary data
+    - **Schema.org**: Standard web vocabulary for creative works and persons
+    - **Dublin Core**: Metadata terms for bibliographic resources
+    - **FOAF**: Friend of a Friend vocabulary for persons
+    
+    ### Ontology Endpoints
+    - `/ontology/query` - Query the local Literature ontology with SPARQL
+    - `/ontology/classes` - List all classes in the ontology
+    - `/ontology/properties` - List all properties in the ontology
+    - `/ontology/ttl` - Download the raw TTL file
+    
     ## Features
     
-    - **Search**: Query books by country, genre, time period
-    - **Graph**: Visualize author relationships and influence networks
-    - **Geography**: Map birthplaces, publications, and story settings
+    - **Search**: Query books by country, genre, time period (SPARQL-based)
+    - **Graph**: Visualize author relationships and influence networks (RDF properties P737, P1066)
+    - **Geography**: Map birthplaces, publications, and story settings (GeoSPARQL)
     - **Recommendations**: Discover similar authors using Jaccard similarity
     
     ## Wikidata Integration
@@ -95,6 +113,7 @@ app.include_router(search_router)
 app.include_router(graph_router)
 app.include_router(geo_router)
 app.include_router(recommendations_router)
+app.include_router(ontology_router)
 
 
 @app.get("/", tags=["Health"])
