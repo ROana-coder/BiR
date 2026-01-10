@@ -1,11 +1,11 @@
 /**
  * Map View Component
  * Uses react-leaflet for geographic visualization
- * Displays author birthplaces (Red) and book narrative locations (Blue)
+ * Displays author birthplaces (Red)
  * Optimized for Dark Mode with high contrast popups
  */
 
-import React, { useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { GeoResponse, GeoPoint } from '../types';
@@ -22,21 +22,6 @@ const redIcon = L.divIcon({
             <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z" 
                   fill="#e11d48" stroke="#fff" stroke-width="2"/>
             <circle cx="16" cy="16" r="6" fill="#fff"/>
-        </svg>
-    `,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-    popupAnchor: [0, -40],
-});
-
-// Custom Blue Icon (Narrative Locations / Settings)
-const blueIcon = L.divIcon({
-    className: 'custom-marker',
-    html: `
-        <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z" 
-                  fill="#3b82f6" stroke="#fff" stroke-width="2"/>
-            <rect x="10" y="10" width="12" height="12" fill="#fff" rx="2"/>
         </svg>
     `,
     iconSize: [32, 40],
@@ -67,19 +52,23 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
 }
 
 export function MapView({ data, height = 500, onPointClick }: MapViewProps) {
-    // Combine all points across layers
+    // Combine all points across layers (only birthplaces, not settings)
     const allPoints = useMemo(() => {
         const points: GeoPoint[] = [];
         console.log('MapView received data:', data);
 
         Object.entries(data).forEach(([layerKey, layer]) => {
             if (layer && layer.points && Array.isArray(layer.points)) {
-                console.log(`Layer ${layerKey} has ${layer.points.length} points`);
-                points.push(...layer.points);
+                // Filter out settings/book locations - only keep birthplaces
+                const birthplacePoints = layer.points.filter(
+                    (p: GeoPoint) => p.layer !== 'settings' && p.entity_type !== 'book'
+                );
+                console.log(`Layer ${layerKey} has ${birthplacePoints.length} birthplace points (filtered from ${layer.points.length})`);
+                points.push(...birthplacePoints);
             }
         });
 
-        console.log('Total points to render:', points.length);
+        console.log('Total birthplace points to render:', points.length);
         return points;
     }, [data]);
 
@@ -183,30 +172,24 @@ export function MapView({ data, height = 500, onPointClick }: MapViewProps) {
 
                 {/* Render markers for each point */}
                 {allPoints.map((point, index) => {
-                    // Determine type: Narrative Location (Setting) vs Author Birthplace
-                    const isSetting = point.layer === 'settings' || point.entity_type === 'book';
-                    const icon = isSetting ? blueIcon : redIcon;
-                    // Colors optimized for dark background
-                    const titleColor = isSetting ? '#60a5fa' : '#fb7185'; // Blue-400 : Rose-400
-
                     return (
                         <Marker
                             key={`marker-${index}-${point.qid}`}
                             position={[point.latitude, point.longitude]}
-                            icon={icon}
+                            icon={redIcon}
                             eventHandlers={{
                                 click: () => onPointClick?.(point),
                             }}
                         >
                             <Popup>
                                 <div style={{ minWidth: '180px', fontFamily: 'system-ui, sans-serif' }}>
-                                    <strong style={{ fontSize: '15px', color: titleColor }}>
-                                        {isSetting ? '📖' : '📍'} {point.name}
+                                    <strong style={{ fontSize: '15px', color: '#fb7185' }}>
+                                        📍 {point.name}
                                     </strong>
                                     {point.entity_name && (
                                         <div style={{ fontSize: '13px', marginTop: '8px', color: '#e5e5e5' }}>
                                             <span style={{ color: '#a3a3a3', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                {isSetting ? 'Setting of' : 'Birthplace of'}
+                                                Birthplace of
                                             </span>
                                             <br />
                                             <strong style={{ fontSize: '14px', display: 'block', marginTop: '2px' }}>
@@ -216,7 +199,7 @@ export function MapView({ data, height = 500, onPointClick }: MapViewProps) {
                                     )}
                                     {point.year && (
                                         <div style={{ fontSize: '12px', marginTop: '6px', color: '#a3a3a3' }}>
-                                            {isSetting ? 'Published:' : 'Born:'} {point.year}
+                                            Born: {point.year}
                                         </div>
                                     )}
                                 </div>
@@ -247,10 +230,6 @@ export function MapView({ data, height = 500, onPointClick }: MapViewProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '16px' }}>📍</span>
                     <span style={{ color: '#fb7185', fontWeight: 500 }}>Author Birthplaces</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '16px' }}>📖</span>
-                    <span style={{ color: '#60a5fa', fontWeight: 500 }}>Story Settings</span>
                 </div>
             </div>
         </div>
