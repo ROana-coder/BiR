@@ -87,13 +87,15 @@ class SearchService:
             offset=offset,
         )
         
-        logger.debug(f"Executing search query with filters: country={country_qid}, genre={genre_qid}")
+        logger.info(f"Generated SPARQL Query:\n{query}")
         
         # Execute query
         results = await self.client.execute_query(query)
+        logger.info(f"Raw Wikidata Results Count: {len(results)}")
         
         # Transform to Book models
         books = self._parse_book_results(results)
+        logger.info(f"Parsed Books Count: {len(books)}")
         
         # Cache results
         await self.cache.set(
