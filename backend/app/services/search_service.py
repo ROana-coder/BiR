@@ -68,7 +68,7 @@ class SearchService:
             limit=limit,
             offset=offset,
         )
-        cache_key += "_v4" # Force cache invalidation for Romanian labels
+        cache_key += "_v5" # Force cache invalidation for Romanian labels and unblocking
         
         # Try cache
         cached = await self.cache.get(cache_key)
