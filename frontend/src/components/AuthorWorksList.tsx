@@ -9,6 +9,13 @@ interface AuthorWorksListProps {
 export function AuthorWorksList({ books }: AuthorWorksListProps) {
     const [selectedAuthorQid, setSelectedAuthorQid] = useState<string | null>(null);
 
+    // Track expanded authors for book list
+    const [expandedAuthors, setExpandedAuthors] = useState<Record<string, boolean>>({});
+
+    const toggleExpand = (author: string) => {
+        setExpandedAuthors(prev => ({ ...prev, [author]: !prev[author] }));
+    };
+
     // Group books by author
     const authorsMap = useMemo(() => {
         // Map stores Book[] keyed by "Author Name"
@@ -68,80 +75,64 @@ export function AuthorWorksList({ books }: AuthorWorksListProps) {
                 {sortedAuthors.map(author => (
                     <div key={author} className="card h-fit break-inside-avoid">
                         <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => {
-                                console.log('Clicked author:', author);
-                                const qid = authorsMap.qidMap.get(author);
-                                console.log('Resolved QID:', qid);
-                                handleAuthorClick(author);
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    handleAuthorClick(author);
-                                }
-                            }}
-                            className="text-left w-full group/btn cursor-pointer outline-none"
+                            className="text-left w-full group/btn cursor-pointer outline-none flex items-center justify-between"
                         >
                             <h3 className="card__title text-3xl font-bold text-accent mb-5 border-b border-white/10 pb-3 group-hover/btn:text-white transition-colors flex items-center gap-2">
                                 {author}
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                    style={{ width: '20px', height: '20px' }}
-                                    className="text-zinc-500 group-hover/btn:text-white transition-all opacity-0 group-hover/btn:opacity-100 transform translate-y-0.5 ml-2"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                                </svg>
                             </h3>
+                            <button
+                                className="ml-2 px-3 py-1 rounded-lg text-sm font-medium text-zinc-200 bg-zinc-800 border border-white/10 shadow hover:bg-accent hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                                onClick={() => toggleExpand(author)}
+                                aria-expanded={!!expandedAuthors[author]}
+                            >
+                                {expandedAuthors[author] ? 'Hide Books' : 'Show Books'}
+                            </button>
                         </div>
-                        <div className="space-y-3">
-                            {authorsMap.map.get(author)?.map((book) => (
-                                <div
-                                    key={book.qid}
-                                    style={{
-                                        backgroundColor: '#27272a', // zinc-800
-                                        border: '1px solid #3f3f46', // zinc-700
-                                        borderRadius: '8px',
-                                        padding: '12px',
-                                        marginBottom: '10px'
-                                    }}
-                                    className="group hover:bg-zinc-700 transition-colors"
-                                >
-                                    <div className="flex justify-between items-start gap-3">
-                                        <h4 className="text-sm font-bold text-zinc-100 group-hover:text-accent transition-colors leading-tight">
-                                            {book.title}
-                                        </h4>
-                                        <span className="text-xs text-zinc-500 font-mono whitespace-nowrap pt-0.5 bg-black/20 px-1.5 py-0.5 rounded">
-                                            {book.publication_year || '-'}
-                                        </span>
-                                    </div>
-
-                                    {/* Awards / Meta */}
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {book.awards.length > 0 && (
-                                            book.awards.map((award, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                                                >
-                                                    🏆 {award}
-                                                </span>
-                                            ))
-                                        )}
-                                        {/* Default badge if 'Novel' etc. */}
-                                        {book.genre && (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
-                                                {book.genre}
+                        {expandedAuthors[author] && (
+                            <div className="space-y-3">
+                                {authorsMap.map.get(author)?.map((book) => (
+                                    <div
+                                        key={book.qid}
+                                        style={{
+                                            backgroundColor: '#27272a', // zinc-800
+                                            border: '1px solid #3f3f46', // zinc-700
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            marginBottom: '10px'
+                                        }}
+                                        className="group hover:bg-zinc-700 transition-colors"
+                                    >
+                                        <div className="flex justify-between items-start gap-3">
+                                            <h4 className="text-sm font-bold text-zinc-100 group-hover:text-accent transition-colors leading-tight">
+                                                {book.title}
+                                            </h4>
+                                            <span className="text-xs text-zinc-500 font-mono whitespace-nowrap pt-0.5 bg-black/20 px-1.5 py-0.5 rounded">
+                                                {book.publication_year || '-'}
                                             </span>
-                                        )}
+                                        </div>
+                                        {/* Awards / Meta */}
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {book.awards.length > 0 && (
+                                                book.awards.map((award, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                                                    >
+                                                        🏆 {award}
+                                                    </span>
+                                                ))
+                                            )}
+                                            {/* Default badge if 'Novel' etc. */}
+                                            {book.genre && (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+                                                    {book.genre}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>

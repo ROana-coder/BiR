@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Author } from '../types';
 import { getAuthor } from '../api/client';
@@ -138,6 +138,26 @@ export function AuthorDetailModal({ qid, onClose }: AuthorDetailModalProps) {
                                         <p className="text-zinc-300 leading-relaxed">{author.description}</p>
                                     </div>
                                 )}
+
+                                {/* Links to Wiki */}
+                                <div className="pt-4 border-t border-white/10">
+                                    <h4 className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Learn More</h4>
+                                    <div className="flex gap-3">
+                                        <a
+                                            href={`https://www.wikidata.org/wiki/${qid}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm text-zinc-200 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                                <polyline points="15 3 21 3 21 9" />
+                                                <line x1="10" y1="14" x2="21" y2="3" />
+                                            </svg>
+                                            Wikidata
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
 
 
