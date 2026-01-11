@@ -72,22 +72,30 @@ function AppContent() {
     // Extract unique authors from filtered books for graph
     const authorQids = useMemo(() => {
         const qids = new Set<string>();
-        filteredBooks.forEach((book) => {
-            book.author_qids.forEach((qid) => qids.add(qid));
-        });
-        return Array.from(qids); // Limit removed per user request
+        if (Array.isArray(filteredBooks)) {
+            filteredBooks.forEach((book) => {
+                if (Array.isArray(book.author_qids)) {
+                    book.author_qids.forEach((qid) => qids.add(qid));
+                }
+            });
+        }
+        return Array.from(qids);
     }, [filteredBooks]);
 
     // Create author QID to name mapping for ForceGraph
     const authorNames = useMemo(() => {
         const names = new Map<string, string>();
-        filteredBooks.forEach((book) => {
-            book.author_qids.forEach((qid, index) => {
-                if (!names.has(qid) && book.authors[index]) {
-                    names.set(qid, book.authors[index]);
+        if (Array.isArray(filteredBooks)) {
+            filteredBooks.forEach((book) => {
+                if (Array.isArray(book.author_qids) && Array.isArray(book.authors)) {
+                    book.author_qids.forEach((qid, index) => {
+                        if (!names.has(qid) && book.authors[index]) {
+                            names.set(qid, book.authors[index]);
+                        }
+                    });
                 }
             });
-        });
+        }
         return names;
     }, [filteredBooks]);
 
