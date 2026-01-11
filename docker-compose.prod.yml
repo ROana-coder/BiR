@@ -2,10 +2,6 @@ version: '3.8'
 
 services:
   # 1. Web Gateway (Caddy + React)
-  #    - Builds the React app
-  #    - Serves it statically
-  #    - Reverse proxis /api -> backend
-  #    - Handles HTTPS (if configured) or HTTP
   web:
     build:
       context: .
@@ -14,9 +10,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
+    # VOLUMES REMOVED: Ensures no stale Caddy data persists.
+    # We rely 100% on the files baked into the image.
     depends_on:
       - backend
 
@@ -41,6 +36,4 @@ services:
     command: redis-server --appendonly yes
 
 volumes:
-  caddy_data:
-  caddy_config:
   redis_data:
