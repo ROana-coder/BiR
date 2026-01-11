@@ -53,7 +53,7 @@ class WikidataClient:
         )
     """
     
-    USER_AGENT = "RepublicOfLetters/1.0 (https://github.com/republic-of-letters; contact@example.com) httpx/0.26"
+    USER_AGENT = "RepublicOfLetters/1.0 (https://github.com/republic-of-letters; mailto:admin@republicofletters.org) based on httpx/0.26"
     
     def __init__(self):
         self.settings = get_settings()
