@@ -1,33 +1,26 @@
 version: '3.8'
 
 services:
-  # 1. Reverse Proxy & Frontend Server (Caddy)
-  caddy:
-    image: caddy:2-alpine
+  # 1. Web Gateway (Caddy + React)
+  #    - Builds the React app
+  #    - Serves it statically
+  #    - Reverse proxis /api -> backend
+  #    - Handles HTTPS (if configured) or HTTP
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./frontend_build:/srv # Shares files built by 'frontend-builder'
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
       - backend
 
-  # 2. Frontend Builder (Temporary container to build React)
-  frontend-builder:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    entrypoint: ["sh", "-c", "npm run build && cp -r dist/* /srv/"]
-    volumes:
-      - ./frontend_build:/srv # Output to shared volume
-    environment:
-      - VITE_API_URL=/api # Proxy handles routing to relative path
-
-  # 3. Backend API
+  # 2. Backend API
   backend:
     build:
       context: ./backend
@@ -39,7 +32,7 @@ services:
     depends_on:
       - redis
 
-  # 4. Redis Cache
+  # 3. Redis Cache
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -51,4 +44,3 @@ volumes:
   caddy_data:
   caddy_config:
   redis_data:
-  frontend_build: # Shared volume for static files

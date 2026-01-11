@@ -1,0 +1,24 @@
+# Stage 1: Build the React Application
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install dependencies first (better cache)
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY frontend/ ./
+
+# Build for production
+# VITE_API_URL must be /api because we are proxying via Caddy on the same domain
+ENV VITE_API_URL=/api
+RUN npm run build
+
+# Stage 2: Serve with Caddy
+FROM caddy:2-alpine
+
+# Copy the build output from the builder stage to Caddy's web root
+COPY --from=builder /app/dist /srv
+
+# Copy the Caddyfile configuration
+COPY Caddyfile /etc/caddy/Caddyfile
