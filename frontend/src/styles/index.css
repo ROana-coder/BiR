@@ -24,8 +24,8 @@
   --color-node-author: #60a5fa;
   --color-node-book: #c084fc;
   --color-node-movement: #34d399;
-  --color-edge: #404040;
-  --color-edge-hover: #707070;
+  --color-edge: rgba(94, 234, 212, 0.5);
+  --color-edge-hover: rgba(94, 234, 212, 0.8);
 
   /* Map layer colors */
   --color-layer-birth: #3b82f6;
@@ -175,6 +175,10 @@ a:hover {
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
   padding: var(--spacing-6);
+  position: sticky;
+  top: 0;
+  height: calc(100vh - var(--header-height));
+  align-self: start;
 }
 
 .main {

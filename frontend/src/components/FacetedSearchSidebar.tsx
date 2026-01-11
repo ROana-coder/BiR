@@ -62,6 +62,7 @@ export function FacetedSearchSidebar({
             genre: null,
             yearStart: null,
             yearEnd: null,
+            notableWorksOnly: false,
         });
     }, [onFiltersChange]);
 
@@ -146,6 +147,39 @@ export function FacetedSearchSidebar({
                 </div>
             </div>
 
+            {/* Notable Works Filter */}
+            <div className="form-group">
+                <label
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-2)',
+                        cursor: 'pointer',
+                        padding: 'var(--spacing-2)',
+                        background: filters.notableWorksOnly ? 'var(--color-accent-muted)' : 'transparent',
+                        border: `1px solid ${filters.notableWorksOnly ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                        borderRadius: 'var(--radius-sm)',
+                        transition: 'all var(--transition-fast)',
+                        fontSize: 'var(--font-size-sm)',
+                    }}
+                >
+                    <input
+                        type="checkbox"
+                        checked={filters.notableWorksOnly}
+                        onChange={(e) => updateFilter('notableWorksOnly', e.target.checked)}
+                        style={{
+                            width: 14,
+                            height: 14,
+                            accentColor: 'var(--color-accent)',
+                            cursor: 'pointer',
+                        }}
+                    />
+                    <span style={{ color: 'var(--color-text-primary)' }}>
+                        🏆 Award Winners Only
+                    </span>
+                </label>
+            </div>
+
             {/* Preset Quick Filters */}
             <div className="form-group">
                 <label className="form-label">Quick Filters</label>
@@ -159,6 +193,7 @@ export function FacetedSearchSidebar({
                                 genre: null,
                                 yearStart: 1920,
                                 yearEnd: 1930,
+                                notableWorksOnly: false,
                             });
                         }}
                     >
@@ -173,6 +208,7 @@ export function FacetedSearchSidebar({
                                 genre: 'Q1422746',
                                 yearStart: null,
                                 yearEnd: null,
+                                notableWorksOnly: false,
                             });
                         }}
                     >
@@ -187,6 +223,7 @@ export function FacetedSearchSidebar({
                                 genre: 'Q8261',
                                 yearStart: 1800,
                                 yearEnd: 1900,
+                                notableWorksOnly: false,
                             });
                         }}
                     >
@@ -210,21 +247,6 @@ export function FacetedSearchSidebar({
                         Reset
                     </button>
                 )}
-            </div>
-
-            {/* Help Text */}
-            <div
-                style={{
-                    marginTop: 'var(--spacing-8)',
-                    padding: 'var(--spacing-4)',
-                    background: 'var(--color-bg)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                }}
-            >
-                <strong style={{ color: 'var(--color-text-primary)' }}>Tip:</strong> Use the quick filters
-                to explore famous literary movements, or combine filters to discover connections.
             </div>
         </aside>
     );

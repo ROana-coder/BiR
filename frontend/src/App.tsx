@@ -36,6 +36,7 @@ function AppContent() {
         genre: null,
         yearStart: null,
         yearEnd: null,
+        notableWorksOnly: false,
     });
 
     // View state
@@ -61,19 +62,25 @@ function AppContent() {
         { enabled: searchTriggered }
     );
 
-    // Extract unique authors from books for graph
+    // Filter books based on notableWorksOnly
+    const filteredBooks = React.useMemo(() => {
+        if (!filters.notableWorksOnly) return books;
+        return books.filter(book => book.awards && book.awards.length > 0);
+    }, [books, filters.notableWorksOnly]);
+
+    // Extract unique authors from filtered books for graph
     const authorQids = React.useMemo(() => {
         const qids = new Set<string>();
-        books.forEach((book) => {
+        filteredBooks.forEach((book) => {
             book.author_qids.forEach((qid) => qids.add(qid));
         });
         return Array.from(qids); // Limit removed per user request
-    }, [books]);
+    }, [filteredBooks]);
 
     // Create author QID to name mapping for ForceGraph
     const authorNames = React.useMemo(() => {
         const names = new Map<string, string>();
-        books.forEach((book) => {
+        filteredBooks.forEach((book) => {
             book.author_qids.forEach((qid, index) => {
                 if (!names.has(qid) && book.authors[index]) {
                     names.set(qid, book.authors[index]);
@@ -81,12 +88,12 @@ function AppContent() {
             });
         });
         return names;
-    }, [books]);
+    }, [filteredBooks]);
 
     // Extract book QIDs for settings layer
     const bookQids = React.useMemo(() => {
-        return books.map(b => b.qid).slice(0, 50); // Limit to top 50 books for performance
-    }, [books]);
+        return filteredBooks.map(b => b.qid).slice(0, 50); // Limit to top 50 books for performance
+    }, [filteredBooks]);
 
     // Graph query
     const {
@@ -187,16 +194,16 @@ function AppContent() {
         switch (activeTab) {
             case 'timeline':
                 // Look up labels for QIDs
-                const countryLabel = filters.country 
+                const countryLabel = filters.country
                     ? COUNTRIES.find(c => c.qid === filters.country)?.label || filters.country
                     : null;
                 const genreLabel = filters.genre
                     ? GENRES.find(g => g.qid === filters.genre)?.label || filters.genre
                     : null;
-                
+
                 return (
-                    <Timeline 
-                        books={books} 
+                    <Timeline
+                        books={filteredBooks}
                         onBookClick={handleBookClick}
                         filterContext={{
                             country: countryLabel,
@@ -241,7 +248,7 @@ function AppContent() {
                                 />
                             ) : (
                                 <BooksForceGraph
-                                    books={books}
+                                    books={filteredBooks}
                                     width={1200}
                                     height={800}
                                     onNodeClick={(node) => console.log(node)}
@@ -269,7 +276,26 @@ function AppContent() {
                 );
 
             case 'works':
-                return <AuthorWorksList books={books} />;
+                // Look up labels for QIDs for export filename
+                const worksCountryLabel = filters.country
+                    ? COUNTRIES.find(c => c.qid === filters.country)?.label || filters.country
+                    : null;
+                const worksGenreLabel = filters.genre
+                    ? GENRES.find(g => g.qid === filters.genre)?.label || filters.genre
+                    : null;
+
+                return (
+                    <AuthorWorksList
+                        books={filteredBooks}
+                        filterContext={{
+                            country: worksCountryLabel,
+                            genre: worksGenreLabel,
+                            yearStart: filters.yearStart,
+                            yearEnd: filters.yearEnd,
+                            notableWorksOnly: filters.notableWorksOnly,
+                        }}
+                    />
+                );
 
             default:
                 return null;
@@ -283,12 +309,17 @@ function AppContent() {
                 <div className="header__logo">Literature Explorer</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
                     {searchTriggered && books.length > 0 && (
-                        <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-4)', alignItems: 'center' }}>
                             <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                                 {authorQids.length} authors found
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                                {books.length} books found
+                                {filteredBooks.length} books found
+                                {filters.notableWorksOnly && filteredBooks.length !== books.length && (
+                                    <span style={{ color: 'var(--color-accent)', marginLeft: 4 }}>
+                                        (🏆 {books.length - filteredBooks.length} filtered)
+                                    </span>
+                                )}
                             </span>
                         </div>
                     )}

@@ -143,6 +143,44 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
 
     return (
         <div className="relative border border-white/10 rounded-lg overflow-hidden" style={{ width, height }}>
+            {/* Legend */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    zIndex: 10,
+                    background: 'rgba(24, 24, 27, 0.95)',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    border: '1px solid rgba(63, 63, 70, 0.8)'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#ef4444" opacity="0.9" />
+                            <circle cx="12" cy="9" r="3" fill="white" opacity="0.9" />
+                            <path d="M6,20 Q6,14 12,14 Q18,14 18,20" fill="white" opacity="0.9" />
+                        </svg>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>Author</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24">
+                            <rect x="4" y="2" width="16" height="20" rx="2" fill="#22c55e" />
+                            <rect x="4" y="2" width="4" height="20" fill="rgba(0,0,0,0.2)" />
+                            <line x1="10" y1="7" x2="18" y2="7" stroke="white" strokeWidth="1.5" opacity="0.6" />
+                            <line x1="10" y1="11" x2="18" y2="11" stroke="white" strokeWidth="1.5" opacity="0.6" />
+                            <line x1="10" y1="15" x2="18" y2="15" stroke="white" strokeWidth="1.5" opacity="0.6" />
+                        </svg>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>Book</span>
+                </div>
+            </div>
+
             <svg ref={svgRef} width={width} height={height} className="bg-zinc-950 cursor-grab active:cursor-grabbing">
                 <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
                     {edges.map((edge, i) => {
@@ -154,62 +192,100 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
                                 key={i}
                                 x1={source.x} y1={source.y}
                                 x2={target.x} y2={target.y}
-                                stroke="rgba(255,255,255,0.2)"
-                                strokeWidth={1}
+                                stroke="rgba(94, 234, 212, 0.5)"
+                                strokeWidth={1.5}
                             />
                         );
                     })}
 
-                    {nodes.map((node) => (
-                        <g
-                            key={node.id}
-                            transform={`translate(${node.x},${node.y})`}
-                            onMouseEnter={() => setHoveredNode(node.id)}
-                            onMouseLeave={() => setHoveredNode(null)}
-                            onClick={() => onNodeClick && onNodeClick(node)}
-                            className="cursor-pointer"
-                        >
-                            <circle
-                                r={node.type === 'author' ? 8 : 6}
-                                fill={node.type === 'author' ? '#ef4444' : '#22c55e'} // Red for Author, Green for Book
-                                stroke={hoveredNode === node.id ? '#fff' : 'none'}
-                                strokeWidth={2}
-                            />
-                            {/* Simple Label */}
-                            <text
-                                dy={node.type === 'author' ? 14 : 12}
-                                textAnchor="middle"
-                                fill="rgba(255,255,255,0.8)"
-                                fontSize={node.type === 'author' ? 10 : 8}
-                                className="pointer-events-none select-none"
-                            >
-                                {node.label.length > 15 && hoveredNode !== node.id ? node.label.slice(0, 12) + '...' : node.label}
-                            </text>
+                    {nodes.map((node) => {
+                        const isHovered = hoveredNode === node.id;
+                        const radius = node.type === 'author' ? 16 : 14;
 
-                            {/* Detailed Tooltip on Hover */}
-                            {hoveredNode === node.id && (
-                                <g transform="translate(10, -20)">
-                                    <rect
-                                        x={0} y={-20} width={180} height={node.type === 'book' ? 60 : 40}
-                                        fill="#18181b" stroke="#3f3f46" rx={4}
-                                    />
-                                    <text x={10} y={0} fill="#fff" fontSize={11} fontWeight="bold">{node.label}</text>
-                                    <text x={10} y={14} fill="#a1a1aa" fontSize={9}>
-                                        {node.type === 'book' ? (
-                                            <>
-                                                📅 {(node.data as Book)?.publication_year || 'Unknown'}
-                                                • 📖 {((node.data as Book)?.genres && (node.data as Book).genres.length > 0
-                                                    ? (node.data as Book).genres.join(', ')
-                                                    : (node.data as Book)?.genre) || 'Genre N/A'}
-                                            </>
-                                        ) : (
-                                            <>✍️ Filtered Author</>
-                                        )}
-                                    </text>
-                                </g>
-                            )}
-                        </g>
-                    ))}
+                        return (
+                            <g
+                                key={node.id}
+                                transform={`translate(${node.x},${node.y})`}
+                                onMouseEnter={() => setHoveredNode(node.id)}
+                                onMouseLeave={() => setHoveredNode(null)}
+                                onClick={() => onNodeClick && onNodeClick(node)}
+                                className="cursor-pointer"
+                            >
+                                {node.type === 'author' ? (
+                                    /* Person icon for authors */
+                                    <g>
+                                        <circle
+                                            r={radius}
+                                            fill="#ef4444"
+                                            stroke={isHovered ? '#fff' : 'transparent'}
+                                            strokeWidth={2}
+                                            opacity={0.9}
+                                        />
+                                        <g transform={`scale(${radius / 14})`}>
+                                            <circle cx="0" cy="-4" r="4" fill="white" opacity="0.9" />
+                                            <path
+                                                d="M-6,8 Q-6,2 0,2 Q6,2 6,8 L6,10 L-6,10 Z"
+                                                fill="white"
+                                                opacity="0.9"
+                                            />
+                                        </g>
+                                    </g>
+                                ) : (
+                                    /* Book icon */
+                                    <g transform={`scale(${radius / 10})`}>
+                                        <rect
+                                            x="-7"
+                                            y="-9"
+                                            width="14"
+                                            height="18"
+                                            rx="1"
+                                            fill="#22c55e"
+                                            stroke={isHovered ? 'white' : 'transparent'}
+                                            strokeWidth={isHovered ? 2 : 0}
+                                        />
+                                        <rect x="-7" y="-9" width="3" height="18" fill="rgba(0,0,0,0.2)" />
+                                        <line x1="-2" y1="-5" x2="5" y2="-5" stroke="white" strokeWidth="1" opacity="0.6" />
+                                        <line x1="-2" y1="-2" x2="5" y2="-2" stroke="white" strokeWidth="1" opacity="0.6" />
+                                        <line x1="-2" y1="1" x2="5" y2="1" stroke="white" strokeWidth="1" opacity="0.6" />
+                                    </g>
+                                )}
+
+                                {/* Label */}
+                                <text
+                                    dy={radius + 10}
+                                    textAnchor="middle"
+                                    fill="rgba(255,255,255,0.8)"
+                                    fontSize={node.type === 'author' ? 10 : 8}
+                                    className="pointer-events-none select-none"
+                                >
+                                    {node.label.length > 15 && !isHovered ? node.label.slice(0, 12) + '...' : node.label}
+                                </text>
+
+                                {/* Detailed Tooltip on Hover */}
+                                {isHovered && (
+                                    <g transform="translate(15, -25)">
+                                        <rect
+                                            x={0} y={-20} width={180} height={node.type === 'book' ? 60 : 40}
+                                            fill="#18181b" stroke="#3f3f46" rx={4}
+                                        />
+                                        <text x={10} y={0} fill="#fff" fontSize={11} fontWeight="bold">{node.label}</text>
+                                        <text x={10} y={14} fill="#a1a1aa" fontSize={9}>
+                                            {node.type === 'book' ? (
+                                                <>
+                                                    📅 {(node.data as Book)?.publication_year || 'Unknown'}
+                                                    • 📖 {((node.data as Book)?.genres && (node.data as Book).genres.length > 0
+                                                        ? (node.data as Book).genres.join(', ')
+                                                        : (node.data as Book)?.genre) || 'Genre N/A'}
+                                                </>
+                                            ) : (
+                                                <>✍️ Filtered Author</>
+                                            )}
+                                        </text>
+                                    </g>
+                                )}
+                            </g>
+                        );
+                    })}
                 </g>
             </svg>
         </div>

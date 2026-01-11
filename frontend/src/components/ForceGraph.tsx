@@ -47,11 +47,11 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
         }
 
         const allowedNodeIds = new Set(highlightedNodeIds);
-        
+
         // Start with nodes from the graph data that are in the query results
         const filteredNodes: GraphNode[] = data.nodes.filter(node => allowedNodeIds.has(node.id));
         const existingNodeIds = new Set(filteredNodes.map(n => n.id));
-        
+
         // Add missing authors as isolated nodes (authors in query results but not in graph data)
         if (authorNames) {
             for (const qid of highlightedNodeIds) {
@@ -70,14 +70,14 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                 }
             }
         }
-        
+
         const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-        
+
         // Filter edges to only include those between filtered nodes
-        const filteredEdges = data.edges.filter(edge => 
+        const filteredEdges = data.edges.filter(edge =>
             filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
         );
-        
+
         // Update central_nodes to only include filtered ones
         const filteredCentralNodes = data.central_nodes.filter(id => filteredNodeIds.has(id));
 
@@ -194,8 +194,8 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
 
     // Get node radius based on centrality
     const getNodeRadius = useCallback((node: SimulationNode) => {
-        const baseRadius = node.type === 'author' ? 12 : 8;
-        const centralityBonus = (node.centrality || 0) * 10;
+        const baseRadius = node.type === 'author' ? 8 : 6;
+        const centralityBonus = (node.centrality || 0) * 5;
         return baseRadius + centralityBonus;
     }, []);
 
@@ -244,22 +244,37 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
             <div
                 style={{
                     position: 'absolute',
-                    top: 'var(--spacing-4)',
-                    right: 'var(--spacing-4)',
+                    top: 12,
+                    right: 12,
                     zIndex: 10,
-                    background: 'var(--color-bg-elevated)',
-                    padding: 'var(--spacing-3)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: 'var(--font-size-xs)',
+                    background: 'rgba(24, 24, 27, 0.95)',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    border: '1px solid rgba(63, 63, 70, 0.8)'
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--color-node-author)' }} />
-                    Author
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="var(--color-node-author)" opacity="0.9" />
+                            <circle cx="12" cy="9" r="3" fill="white" opacity="0.9" />
+                            <path d="M6,20 Q6,14 12,14 Q18,14 18,20" fill="white" opacity="0.9" />
+                        </svg>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>Author</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--color-accent)' }} />
-                    High Influence
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="var(--color-accent)" opacity="0.9" />
+                            <circle cx="12" cy="9" r="3" fill="white" opacity="0.9" />
+                            <path d="M6,20 Q6,14 12,14 Q18,14 18,20" fill="white" opacity="0.9" />
+                            <circle cx="18" cy="6" r="5" fill="gold" />
+                            <text x="18" y="8" textAnchor="middle" fontSize="6" fill="black" fontWeight="bold">★</text>
+                        </svg>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>High Influence</span>
                 </div>
             </div>
 
@@ -348,32 +363,104 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                     })}
 
                     {/* Nodes */}
-                    {nodes.map((node) => (
-                        <g
-                            key={node.id}
-                            className="graph-node"
-                            transform={`translate(${node.x || 0},${node.y || 0})`}
-                            onMouseEnter={() => setHoveredNode(node.id)}
-                            onMouseLeave={() => setHoveredNode(null)}
-                            onClick={() => onNodeClick?.(node)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <circle
-                                r={getNodeRadius(node)}
-                                fill={getNodeColor(node)}
-                                stroke={hoveredNode === node.id ? 'white' : 'none'}
-                                strokeWidth={2}
-                            />
-                            <text
-                                className="graph-node__label"
-                                dy={getNodeRadius(node) + 14}
-                                textAnchor="middle"
-                                style={{ opacity: hoveredNode === node.id || filteredData.central_nodes.includes(node.id) ? 1 : 0.7 }}
+                    {nodes.map((node) => {
+                        const radius = getNodeRadius(node);
+                        const color = getNodeColor(node);
+                        const isHovered = hoveredNode === node.id;
+                        const isCentral = filteredData.central_nodes.includes(node.id);
+
+                        return (
+                            <g
+                                key={node.id}
+                                className="graph-node"
+                                transform={`translate(${node.x || 0},${node.y || 0})`}
+                                onMouseEnter={() => setHoveredNode(node.id)}
+                                onMouseLeave={() => setHoveredNode(null)}
+                                onClick={() => onNodeClick?.(node)}
+                                style={{ cursor: 'pointer' }}
                             >
-                                {node.label.length > 20 ? node.label.slice(0, 18) + '...' : node.label}
-                            </text>
-                        </g>
-                    ))}
+                                {node.type === 'author' ? (
+                                    /* Person icon for authors */
+                                    <g>
+                                        {/* Background circle */}
+                                        <circle
+                                            r={radius + 2}
+                                            fill={color}
+                                            stroke={isHovered ? 'white' : isCentral ? 'var(--color-accent-muted)' : 'transparent'}
+                                            strokeWidth={isHovered ? 3 : isCentral ? 2 : 0}
+                                            opacity={0.9}
+                                        />
+                                        {/* Person silhouette */}
+                                        <g transform={`scale(${radius / 14})`}>
+                                            {/* Head */}
+                                            <circle cx="0" cy="-4" r="4" fill="white" opacity="0.9" />
+                                            {/* Body */}
+                                            <path
+                                                d="M-6,8 Q-6,2 0,2 Q6,2 6,8 L6,10 L-6,10 Z"
+                                                fill="white"
+                                                opacity="0.9"
+                                            />
+                                        </g>
+                                        {/* Star badge for high influence */}
+                                        {isCentral && (
+                                            <g transform={`translate(${radius * 0.7}, ${-radius * 0.7})`}>
+                                                <circle r="5" fill="gold" />
+                                                <text
+                                                    textAnchor="middle"
+                                                    dy="3"
+                                                    fontSize="7"
+                                                    fill="black"
+                                                    fontWeight="bold"
+                                                >
+                                                    ★
+                                                </text>
+                                            </g>
+                                        )}
+                                    </g>
+                                ) : node.type === 'book' ? (
+                                    /* Book icon */
+                                    <g>
+                                        {/* Book shape */}
+                                        <g transform={`scale(${radius / 10})`}>
+                                            {/* Book cover */}
+                                            <rect
+                                                x="-7"
+                                                y="-9"
+                                                width="14"
+                                                height="18"
+                                                rx="1"
+                                                fill={color}
+                                                stroke={isHovered ? 'white' : 'transparent'}
+                                                strokeWidth={isHovered ? 2 : 0}
+                                            />
+                                            {/* Spine */}
+                                            <rect x="-7" y="-9" width="3" height="18" fill="rgba(0,0,0,0.2)" />
+                                            {/* Pages */}
+                                            <line x1="-2" y1="-5" x2="5" y2="-5" stroke="white" strokeWidth="1" opacity="0.6" />
+                                            <line x1="-2" y1="-2" x2="5" y2="-2" stroke="white" strokeWidth="1" opacity="0.6" />
+                                            <line x1="-2" y1="1" x2="5" y2="1" stroke="white" strokeWidth="1" opacity="0.6" />
+                                        </g>
+                                    </g>
+                                ) : (
+                                    /* Default circle for other types */
+                                    <circle
+                                        r={radius}
+                                        fill={color}
+                                        stroke={isHovered ? 'white' : 'none'}
+                                        strokeWidth={2}
+                                    />
+                                )}
+                                <text
+                                    className="graph-node__label"
+                                    dy={radius + 14}
+                                    textAnchor="middle"
+                                    style={{ opacity: isHovered || isCentral ? 1 : 0.7 }}
+                                >
+                                    {node.label.length > 20 ? node.label.slice(0, 18) + '...' : node.label}
+                                </text>
+                            </g>
+                        );
+                    })}
                 </g>
             </svg>
 

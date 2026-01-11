@@ -157,6 +157,7 @@ export interface FilterState {
     genre: string | null;
     yearStart: number | null;
     yearEnd: number | null;
+    notableWorksOnly: boolean;
 }
 
 export type ViewMode = 'search' | 'graph' | 'map' | 'timeline';

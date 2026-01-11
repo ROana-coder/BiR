@@ -1,12 +1,105 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Book } from '../types';
 import { AuthorDetailModal } from './AuthorDetailModal';
 
-interface AuthorWorksListProps {
-    books: Book[];
+interface FilterContext {
+    country?: string | null;
+    genre?: string | null;
+    yearStart?: number | null;
+    yearEnd?: number | null;
+    notableWorksOnly?: boolean;
 }
 
-export function AuthorWorksList({ books }: AuthorWorksListProps) {
+interface AuthorWorksListProps {
+    books: Book[];
+    filterContext?: FilterContext;
+}
+
+// Helper to escape CSV values
+function escapeCSV(value: string): string {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+}
+
+// Helper to convert books to CSV
+function booksToCSV(books: Book[]): string {
+    const headers = ['Title', 'Authors', 'Publication Year', 'Genres', 'Awards'];
+    const rows = books.map(book => [
+        escapeCSV(book.title),
+        escapeCSV(book.authors.join('; ')),
+        book.publication_year?.toString() || '',
+        escapeCSV(book.genres.length > 0 ? book.genres.join('; ') : (book.genre || '')),
+        escapeCSV(book.awards.join('; ')),
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+}
+
+// Helper to convert books to XLS (TSV format that Excel can open)
+function booksToXLS(books: Book[]): string {
+    const headers = ['Title', 'Authors', 'Publication Year', 'Genres', 'Awards'];
+    const rows = books.map(book => [
+        book.title,
+        book.authors.join('; '),
+        book.publication_year?.toString() || '',
+        book.genres.length > 0 ? book.genres.join('; ') : (book.genre || ''),
+        book.awards.join('; '),
+    ]);
+    return [headers.join('\t'), ...rows.map(row => row.join('\t'))].join('\n');
+}
+
+// Helper to download a file
+function downloadFile(content: string, filename: string, mimeType: string): void {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Helper to generate descriptive filename
+function generateFilename(filterContext?: FilterContext): string {
+    const parts: string[] = [];
+
+    // Use genre name as prefix if available, otherwise "books"
+    if (filterContext?.genre) {
+        parts.push(filterContext.genre.toLowerCase().replace(/\s+/g, '_'));
+    } else {
+        parts.push('books');
+    }
+
+    if (filterContext?.country) {
+        // Clean up country name for filename
+        parts.push(filterContext.country.toLowerCase().replace(/\s+/g, '_'));
+    }
+    if (filterContext?.yearStart || filterContext?.yearEnd) {
+        const start = filterContext.yearStart || '';
+        const end = filterContext.yearEnd || '';
+        if (start && end) {
+            parts.push(`${start}-${end}`);
+        } else if (start) {
+            parts.push(`from_${start}`);
+        } else if (end) {
+            parts.push(`until_${end}`);
+        }
+    }
+    if (filterContext?.notableWorksOnly) {
+        parts.push('awards');
+    }
+
+    const now = new Date();
+    const timestamp = `${now.toISOString().split('T')[0]}_${now.toTimeString().slice(0, 8).replace(/:/g, '-')}`;
+    parts.push(timestamp);
+
+    return parts.join('_');
+}
+
+export function AuthorWorksList({ books, filterContext }: AuthorWorksListProps) {
     const [selectedAuthorQid, setSelectedAuthorQid] = useState<string | null>(null);
 
     // Track expanded authors for book list
@@ -15,6 +108,19 @@ export function AuthorWorksList({ books }: AuthorWorksListProps) {
     const toggleExpand = (author: string) => {
         setExpandedAuthors(prev => ({ ...prev, [author]: !prev[author] }));
     };
+
+    // Export handlers
+    const handleExportCSV = useCallback(() => {
+        const csv = booksToCSV(books);
+        const filename = generateFilename(filterContext);
+        downloadFile(csv, `${filename}.csv`, 'text/csv;charset=utf-8;');
+    }, [books, filterContext]);
+
+    const handleExportXLS = useCallback(() => {
+        const xls = booksToXLS(books);
+        const filename = generateFilename(filterContext);
+        downloadFile(xls, `${filename}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
+    }, [books, filterContext]);
 
     // Group books by author
     const authorsMap = useMemo(() => {
@@ -71,19 +177,76 @@ export function AuthorWorksList({ books }: AuthorWorksListProps) {
 
     return (
         <>
+            {/* Export Header */}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: 'var(--spacing-4) var(--spacing-6)',
+                    borderBottom: '1px solid var(--color-border)',
+                    background: 'var(--color-bg-elevated)',
+                }}
+            >
+                <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                    {books.length} works from {sortedAuthors.length} authors
+                </span>
+                <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                    <button
+                        onClick={handleExportCSV}
+                        className="btn btn--secondary"
+                        style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--spacing-2) var(--spacing-3)' }}
+                    >
+                        📥 Export CSV
+                    </button>
+                    <button
+                        onClick={handleExportXLS}
+                        className="btn btn--secondary"
+                        style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--spacing-2) var(--spacing-3)' }}
+                    >
+                        📊 Export XLS
+                    </button>
+                </div>
+            </div>
+
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto h-full pb-20">
                 {sortedAuthors.map(author => (
                     <div key={author} className="card h-fit break-inside-avoid">
                         <div
                             className="text-left w-full group/btn cursor-pointer outline-none flex items-center justify-between"
                         >
-                            <h3 className="card__title text-3xl font-bold text-accent mb-5 border-b border-white/10 pb-3 group-hover/btn:text-white transition-colors flex items-center gap-2">
+                            <h3 style={{
+                                fontSize: 'var(--font-size-lg)',
+                                fontWeight: 'var(--font-weight-bold)',
+                                color: 'var(--color-text-primary)',
+                                marginBottom: 'var(--spacing-3)',
+                                borderBottom: '1px solid var(--color-border)',
+                                paddingBottom: 'var(--spacing-3)',
+                            }}>
                                 {author}
                             </h3>
                             <button
-                                className="ml-2 px-3 py-1 rounded-lg text-sm font-medium text-zinc-200 bg-zinc-800 border border-white/10 shadow hover:bg-accent hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                                 onClick={() => toggleExpand(author)}
                                 aria-expanded={!!expandedAuthors[author]}
+                                style={{
+                                    padding: 'var(--spacing-2) var(--spacing-3)',
+                                    fontSize: 'var(--font-size-xs)',
+                                    fontWeight: 'var(--font-weight-medium)',
+                                    color: 'var(--color-text-primary)',
+                                    background: 'var(--color-bg)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    transition: 'all var(--transition-fast)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'var(--color-accent)';
+                                    e.currentTarget.style.borderColor = 'var(--color-accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'var(--color-bg)';
+                                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                                }}
                             >
                                 {expandedAuthors[author] ? 'Hide Books' : 'Show Books'}
                             </button>
