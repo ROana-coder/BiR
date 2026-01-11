@@ -3,7 +3,7 @@
  * Provides filters for searching books by country, genre, and year range
  */
 
-import React, { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { FilterState } from '../types';
 
 // Common Wikidata QIDs for countries
@@ -42,6 +42,8 @@ interface FacetedSearchSidebarProps {
     onFiltersChange: (filters: FilterState) => void;
     onSearch: () => void;
     isLoading?: boolean;
+    history?: FilterState[];
+    onHistorySelect?: (filters: FilterState) => void;
 }
 
 export function FacetedSearchSidebar({
@@ -49,6 +51,8 @@ export function FacetedSearchSidebar({
     onFiltersChange,
     onSearch,
     isLoading = false,
+    history = [],
+    onHistorySelect,
 }: FacetedSearchSidebarProps) {
     const updateFilter = useCallback(
         <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
@@ -67,7 +71,28 @@ export function FacetedSearchSidebar({
         });
     }, [onFiltersChange]);
 
-    const hasFilters = filters.country || filters.genre || filters.yearStart || filters.yearEnd;
+    const formatFilter = (f: FilterState) => {
+        const parts = [];
+        if (f.country) {
+            const c = COUNTRIES.find(c => c.qid === f.country);
+            parts.push(c ? c.label : 'Unknown Country');
+        }
+        if (f.genre) {
+            const g = GENRES.find(g => g.qid === f.genre);
+            parts.push(g ? g.label : 'Unknown Genre');
+        } else {
+            parts.push('All Genres');
+        }
+        if (f.yearStart || f.yearEnd) {
+            parts.push(`${f.yearStart || '?'}–${f.yearEnd || '?'}`);
+        }
+        if (f.notableWorksOnly) parts.push("🏆 Awards");
+
+        if (parts.length === 0) return "All Books";
+        return parts.join(', ');
+    };
+
+    const hasFilters = filters.country || filters.genre || filters.yearStart || filters.yearEnd || filters.notableWorksOnly;
 
     return (
         <aside className="sidebar">
@@ -232,6 +257,34 @@ export function FacetedSearchSidebar({
                     </button>
                 </div>
             </div>
+
+            {/* Search History */}
+            {history.length > 0 && (
+                <div className="form-group">
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        Recent Searches
+                        <span style={{ fontSize: '0.7em', opacity: 0.6 }}>Last 5</span>
+                    </label>
+                    <select
+                        className="form-select"
+                        value=""
+                        onChange={(e) => {
+                            const idx = parseInt(e.target.value);
+                            if (idx >= 0 && onHistorySelect) {
+                                onHistorySelect(history[idx]);
+                            }
+                        }}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <option value="" disabled>Select a previous search...</option>
+                        {history.map((h, i) => (
+                            <option key={i} value={i}>
+                                {formatFilter(h)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-6)' }}>

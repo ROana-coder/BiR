@@ -30,8 +30,8 @@ const queryClient = new QueryClient({
 type TabType = 'timeline' | 'graph' | 'map';
 
 function AppContent() {
-    // Filter state
-    const [filters, setFilters] = useState<FilterState>({
+    // UI Filter state (what the user is editing)
+    const [uiFilters, setUiFilters] = useState<FilterState>({
         country: null,
         genre: null,
         yearStart: null,
@@ -39,10 +39,12 @@ function AppContent() {
         notableWorksOnly: false,
     });
 
+    // Active Search State (what is currently queried)
+    const [activeFilters, setActiveFilters] = useState<FilterState | null>(null);
+
     // View state
     const [activeTab, setActiveTab] = useState<'timeline' | 'graph' | 'map' | 'works'>('graph');
     const [graphMode, setGraphMode] = useState<'influence' | 'works'>('influence');
-    const [searchTriggered, setSearchTriggered] = useState(false);
     const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
 
     // Search query
@@ -50,23 +52,22 @@ function AppContent() {
         data: books = [],
         isLoading: booksLoading,
         error: booksError,
-        refetch: refetchBooks,
     } = useSearchBooks(
         {
-            country: filters.country || undefined,
-            genre: filters.genre || undefined,
-            year_start: filters.yearStart || undefined,
-            year_end: filters.yearEnd || undefined,
+            country: activeFilters?.country || undefined,
+            genre: activeFilters?.genre || undefined,
+            year_start: activeFilters?.yearStart || undefined,
+            year_end: activeFilters?.yearEnd || undefined,
             limit: 100,
         },
-        { enabled: searchTriggered }
+        { enabled: activeFilters !== null }
     );
 
     // Filter books based on notableWorksOnly
     const filteredBooks = React.useMemo(() => {
-        if (!filters.notableWorksOnly) return books;
+        if (!activeFilters?.notableWorksOnly) return books;
         return books.filter(book => book.awards && book.awards.length > 0);
-    }, [books, filters.notableWorksOnly]);
+    }, [books, activeFilters?.notableWorksOnly]);
 
     // Extract unique authors from filtered books for graph
     const authorQids = React.useMemo(() => {
@@ -140,24 +141,23 @@ function AppContent() {
 
     // Handlers
     const handleSearch = useCallback(() => {
-        setSearchTriggered(true);
-        refetchBooks();
+        // Apply current UI filters as active filters
+        setActiveFilters(uiFilters);
+        // Refetch is handled automatically by react-query when activeFilters changes
 
         // Update history
         setFilterHistory(prev => {
-            // Avoid duplicates at the top of the stack
-            if (prev.length > 0 && JSON.stringify(prev[0]) === JSON.stringify(filters)) {
-                return prev;
-            }
-            const newHistory = [filters, ...prev];
+            // Remove any existing duplicate of the current filter
+            const filtered = prev.filter(f => JSON.stringify(f) !== JSON.stringify(uiFilters));
+            // Add current filter to the top
+            const newHistory = [uiFilters, ...filtered];
             return newHistory.slice(0, 5); // Keep last 5
         });
-    }, [refetchBooks, filters]);
+    }, [uiFilters]);
 
     const handleRestoreFilter = useCallback((historyFilter: FilterState) => {
-        setFilters(historyFilter);
-        // Automatically trigger search? User might want to adjust first.
-        // Let's just restore inputs. User can click Search.
+        setUiFilters(historyFilter);
+        setActiveFilters(historyFilter);
     }, []);
 
     const handleBookClick = useCallback((book: Book) => {
@@ -176,7 +176,7 @@ function AppContent() {
 
     // Determine current view content
     const renderContent = () => {
-        if (!searchTriggered) {
+        if (!activeFilters) {
             return (
                 <EmptyState
                     icon="🔍"
@@ -213,11 +213,11 @@ function AppContent() {
         switch (activeTab) {
             case 'timeline':
                 // Look up labels for QIDs
-                const countryLabel = filters.country
-                    ? COUNTRIES.find(c => c.qid === filters.country)?.label || filters.country
+                const countryLabel = activeFilters.country
+                    ? COUNTRIES.find(c => c.qid === activeFilters.country)?.label || activeFilters.country
                     : null;
-                const genreLabel = filters.genre
-                    ? GENRES.find(g => g.qid === filters.genre)?.label || filters.genre
+                const genreLabel = activeFilters.genre
+                    ? GENRES.find(g => g.qid === activeFilters.genre)?.label || activeFilters.genre
                     : null;
 
                 return (
@@ -227,8 +227,8 @@ function AppContent() {
                         filterContext={{
                             country: countryLabel,
                             genre: genreLabel,
-                            yearStart: filters.yearStart,
-                            yearEnd: filters.yearEnd,
+                            yearStart: activeFilters.yearStart,
+                            yearEnd: activeFilters.yearEnd,
                         }}
                     />
                 );
@@ -296,11 +296,11 @@ function AppContent() {
 
             case 'works':
                 // Look up labels for QIDs for export filename
-                const worksCountryLabel = filters.country
-                    ? COUNTRIES.find(c => c.qid === filters.country)?.label || filters.country
+                const worksCountryLabel = activeFilters.country
+                    ? COUNTRIES.find(c => c.qid === activeFilters.country)?.label || activeFilters.country
                     : null;
-                const worksGenreLabel = filters.genre
-                    ? GENRES.find(g => g.qid === filters.genre)?.label || filters.genre
+                const worksGenreLabel = activeFilters.genre
+                    ? GENRES.find(g => g.qid === activeFilters.genre)?.label || activeFilters.genre
                     : null;
 
                 return (
@@ -309,9 +309,9 @@ function AppContent() {
                         filterContext={{
                             country: worksCountryLabel,
                             genre: worksGenreLabel,
-                            yearStart: filters.yearStart,
-                            yearEnd: filters.yearEnd,
-                            notableWorksOnly: filters.notableWorksOnly,
+                            yearStart: activeFilters.yearStart,
+                            yearEnd: activeFilters.yearEnd,
+                            notableWorksOnly: activeFilters.notableWorksOnly,
                         }}
                     />
                 );
@@ -327,14 +327,14 @@ function AppContent() {
             <header className="header">
                 <div className="header__logo">Literature Explorer</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
-                    {searchTriggered && books.length > 0 && (
+                    {activeFilters && books.length > 0 && (
                         <div style={{ display: 'flex', gap: 'var(--spacing-4)', alignItems: 'center' }}>
                             <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                                 {authorQids.length} authors found
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                                 {filteredBooks.length} books found
-                                {filters.notableWorksOnly && filteredBooks.length !== books.length && (
+                                {activeFilters?.notableWorksOnly && filteredBooks.length !== books.length && (
                                     <span style={{ color: 'var(--color-accent)', marginLeft: 4 }}>
                                         (🏆 {books.length - filteredBooks.length} filtered)
                                     </span>
@@ -347,8 +347,8 @@ function AppContent() {
 
             {/* Sidebar */}
             <FacetedSearchSidebar
-                filters={filters}
-                onFiltersChange={setFilters}
+                filters={uiFilters}
+                onFiltersChange={setUiFilters}
                 onSearch={handleSearch}
                 isLoading={booksLoading}
                 history={filterHistory}
