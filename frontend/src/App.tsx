@@ -3,7 +3,7 @@
  * Literature Explorer Data Exploration Platform
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FacetedSearchSidebar, COUNTRIES, GENRES } from './components/FacetedSearchSidebar';
 import { ForceGraph } from './components/ForceGraph';
@@ -13,7 +13,7 @@ import { MapView } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { EmptyState, LoadingState, ErrorState } from './components/EmptyState';
 import { useSearchBooks, useAuthorNetwork, useLocations } from './api/hooks';
-import type { FilterState, ViewMode, Book, GraphNode, GeoLayerType } from './types';
+import type { FilterState, Book, GraphNode, GeoLayerType } from './types';
 import './styles/index.css';
 
 // Create Query Client with defaults
@@ -27,7 +27,7 @@ const queryClient = new QueryClient({
     },
 });
 
-type TabType = 'timeline' | 'graph' | 'map';
+
 
 function AppContent() {
     // UI Filter state (what the user is editing)
@@ -45,7 +45,7 @@ function AppContent() {
     // View state
     const [activeTab, setActiveTab] = useState<'timeline' | 'graph' | 'map' | 'works'>('graph');
     const [graphMode, setGraphMode] = useState<'influence' | 'works'>('influence');
-    const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
+
 
     // Search query
     const {
@@ -64,13 +64,13 @@ function AppContent() {
     );
 
     // Filter books based on notableWorksOnly
-    const filteredBooks = React.useMemo(() => {
+    const filteredBooks = useMemo(() => {
         if (!activeFilters?.notableWorksOnly) return books;
         return books.filter(book => book.awards && book.awards.length > 0);
     }, [books, activeFilters?.notableWorksOnly]);
 
     // Extract unique authors from filtered books for graph
-    const authorQids = React.useMemo(() => {
+    const authorQids = useMemo(() => {
         const qids = new Set<string>();
         filteredBooks.forEach((book) => {
             book.author_qids.forEach((qid) => qids.add(qid));
@@ -79,7 +79,7 @@ function AppContent() {
     }, [filteredBooks]);
 
     // Create author QID to name mapping for ForceGraph
-    const authorNames = React.useMemo(() => {
+    const authorNames = useMemo(() => {
         const names = new Map<string, string>();
         filteredBooks.forEach((book) => {
             book.author_qids.forEach((qid, index) => {
@@ -92,7 +92,7 @@ function AppContent() {
     }, [filteredBooks]);
 
     // Extract book QIDs for settings layer
-    const bookQids = React.useMemo(() => {
+    const bookQids = useMemo(() => {
         return filteredBooks.map(b => b.qid).slice(0, 50); // Limit to top 50 books for performance
     }, [filteredBooks]);
 
@@ -130,7 +130,7 @@ function AppContent() {
     const geoError = birthplacesError;
 
     // Debug: log geo data when it changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (birthplacesData) console.log('Birthplaces received:', birthplacesData);
         if (settingsData) console.log('Settings received:', settingsData);
         if (geoError) console.error('Geo error:', geoError);
@@ -168,9 +168,7 @@ function AppContent() {
     const handleNodeClick = useCallback((node: GraphNode) => {
         console.log('Selected node:', node);
         if (node.type === 'author') {
-            setSelectedAuthors((prev) =>
-                prev.includes(node.id) ? prev.filter((id) => id !== node.id) : [...prev, node.id]
-            );
+            console.log('Selected author:', node.id);
         }
     }, []);
 

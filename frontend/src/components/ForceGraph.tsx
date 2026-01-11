@@ -4,7 +4,7 @@
  * Visualizes author relationships and influence networks
  */
 
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { GraphData, GraphNode, GraphEdge } from '../types';
 
@@ -27,9 +27,10 @@ interface SimulationNode extends GraphNode {
     fy?: number | null;
 }
 
-interface SimulationEdge extends GraphEdge {
-    source: SimulationNode | string;
-    target: SimulationNode | string;
+// Omit 'source' and 'target' from GraphEdge before extending, then redefine them as SimulationNode | string
+interface SimulationEdge extends Omit<GraphEdge, 'source' | 'target'> {
+    source: string | SimulationNode;
+    target: string | SimulationNode;
 }
 
 export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highlightedNodeIds, authorNames }: ForceGraphProps) {
@@ -148,32 +149,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
     }, []);
 
     // Node drag handlers
-    const handleDragStart = useCallback(
-        (event: React.MouseEvent, node: SimulationNode) => {
-            if (simulationRef.current) {
-                simulationRef.current.alphaTarget(0.3).restart();
-                node.fx = node.x;
-                node.fy = node.y;
-            }
-        },
-        []
-    );
 
-    const handleDrag = useCallback((event: React.MouseEvent, node: SimulationNode) => {
-        // Calculate position accounting for zoom transform
-        const [x, y] = transform.invert([event.nativeEvent.offsetX, event.nativeEvent.offsetY]);
-        node.fx = x;
-        node.fy = y;
-        setNodes((prev) => [...prev]);
-    }, [transform]);
-
-    const handleDragEnd = useCallback((node: SimulationNode) => {
-        if (simulationRef.current) {
-            simulationRef.current.alphaTarget(0);
-            node.fx = null;
-            node.fy = null;
-        }
-    }, []);
 
     // Get node color based on type and centrality
     const getNodeColor = useCallback((node: SimulationNode) => {

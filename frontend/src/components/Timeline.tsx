@@ -3,7 +3,7 @@
  * Shows chronological spread of books and authors
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Book } from '../types';
 
 interface TimelineProps {
@@ -16,11 +16,6 @@ interface TimelineProps {
         yearStart?: number | null;
         yearEnd?: number | null;
     };
-}
-
-interface TimelineEntry {
-    year: number;
-    books: Book[];
 }
 
 export function Timeline({ books, filterContext }: TimelineProps) {
@@ -63,21 +58,21 @@ export function Timeline({ books, filterContext }: TimelineProps) {
     // Build dynamic title based on filters
     const buildTitle = () => {
         const parts: string[] = ['Timeline Analysis'];
-        
+
         if (filterContext?.genre) {
             parts.push(`of ${filterContext.genre}`);
         }
-        
+
         if (filterContext?.country) {
             parts.push(`in ${filterContext.country}`);
         }
-        
+
         if (filterContext?.yearStart || filterContext?.yearEnd) {
             const start = filterContext.yearStart || 'any';
             const end = filterContext.yearEnd || 'present';
             parts.push(`(${start} - ${end})`);
         }
-        
+
         return parts.join(' ');
     };
 

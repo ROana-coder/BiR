@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Book } from '../types';
 import { AuthorDetailModal } from './AuthorDetailModal';
 import { BookDetailModal } from './BookDetailModal';

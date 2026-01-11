@@ -4,9 +4,9 @@
  * (Star graph topology: Author -> Books)
  */
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import * as d3 from 'd3';
-import type { Book, GraphNode, GraphEdge } from '../types';
+import type { Book } from '../types';
 
 interface BooksForceGraphProps {
     books: Book[];
@@ -118,24 +118,7 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
     }, []);
 
     // Drag Handling
-    const handleDragStart = useCallback((event: any, node: SimulationNode) => {
-        if (!simulationRef.current) return;
-        if (!event.active) simulationRef.current.alphaTarget(0.3).restart();
-        node.fx = node.x;
-        node.fy = node.y;
-    }, []);
 
-    const handleDrag = useCallback((event: any, node: SimulationNode) => {
-        node.fx = event.x;
-        node.fy = event.y;
-    }, []);
-
-    const handleDragEnd = useCallback((event: any, node: SimulationNode) => {
-        if (!simulationRef.current) return;
-        if (!event.active) simulationRef.current.alphaTarget(0);
-        node.fx = null;
-        node.fy = null;
-    }, []);
 
     if (!graphData.nodes.length) {
         return <div className="text-gray-500 text-center p-10">No books to visualize. Filter some search results first!</div>;

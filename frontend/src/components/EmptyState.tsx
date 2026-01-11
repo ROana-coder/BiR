@@ -3,7 +3,7 @@
  * Displays graceful UI when no data is available
  */
 
-import React from 'react';
+
 
 interface EmptyStateProps {
     icon?: string;
