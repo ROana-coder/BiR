@@ -26,7 +26,7 @@ class EdgeType(str, Enum):
     AUTHORED = "authored"           # P50 inverse
     INFLUENCED_BY = "influenced_by" # P737
     STUDENT_OF = "student_of"       # P1066
-    MEMBER_OF = "member_of"         # P135 (movement membership)
+    SHARED_MOVEMENT = "shared_movement" # P135 (movement membership)
 
 
 class GraphNode(BaseModel):

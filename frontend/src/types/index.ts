@@ -47,6 +47,10 @@ export interface Book {
     narrative_locations: Location[];
     language: string | null;
     language_qid: string | null;
+    languages: string[];
+    language_qids: string[];
+    publisher: string | null;
+    publisher_qid: string | null;
     awards: string[];
     award_qids: string[];
 }
@@ -54,7 +58,7 @@ export interface Book {
 // === Graph Types ===
 
 export type NodeType = 'author' | 'book' | 'movement' | 'location';
-export type EdgeType = 'authored' | 'influenced_by' | 'student_of' | 'member_of';
+export type EdgeType = 'authored' | 'influenced_by' | 'student_of' | 'shared_movement';
 
 export interface GraphNode {
     id: string;

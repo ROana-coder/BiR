@@ -68,7 +68,7 @@ class SearchService:
             limit=limit,
             offset=offset,
         )
-        cache_key += "_v2" # Force cache invalidation
+        cache_key += "_v4" # Force cache invalidation for Romanian labels
         
         # Try cache
         cached = await self.cache.get(cache_key)
@@ -124,6 +124,16 @@ class SearchService:
                     except (ValueError, TypeError):
                         pass
                 
+                # Parse publication place
+                pub_place = None
+                if row.get("pubPlace"):
+                    pub_place = Location(
+                        qid=row["pubPlace"],
+                        name=row.get("pubPlaceLabel", "Unknown"),
+                        country=row.get("pubPlaceCountryLabel"),
+                        country_qid=row.get("pubPlaceCountry"),
+                    )
+                
                 book = Book(
                     qid=qid,
                     title=row.get("bookLabel", "Unknown"),
@@ -135,6 +145,11 @@ class SearchService:
                     genre_qids=[],
                     awards=[],
                     award_qids=[],
+                    languages=[],
+                    language_qids=[],
+                    publication_place=pub_place,
+                    publisher=row.get("publisherLabel"),
+                    publisher_qid=row.get("publisher"),
                 )
                 
                 # Parse comma-separated genres and awards
@@ -147,6 +162,13 @@ class SearchService:
                 award_str = row.get("awards", "")
                 if award_str:
                     book.awards = [a.strip() for a in award_str.split(", ") if a.strip()]
+                
+                # Parse languages
+                lang_str = row.get("languages", "")
+                if lang_str:
+                    book.languages = [l.strip() for l in lang_str.split(", ") if l.strip()]
+                    if book.languages:
+                        book.language = book.languages[0]
                 
                 books_map[qid] = book
             

@@ -1,7 +1,7 @@
 {# SPARQL template for fetching author network graph #}
 {# Performs 2-hop queries for relationships between authors #}
 
-SELECT DISTINCT ?source ?sourceLabel ?target ?targetLabel ?relationType
+SELECT DISTINCT ?source ?sourceLabel ?target ?targetLabel ?relationType ?movementLabel
 WHERE {
   hint:Query hint:optimizer "None".
   

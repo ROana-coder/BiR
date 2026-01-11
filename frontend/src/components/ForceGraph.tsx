@@ -344,7 +344,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                                     stroke={getEdgeColor(edge)}
                                     strokeWidth={isHovered ? 2 : 1}
                                     opacity={isHovered ? 1 : 0.6}
-                                    markerEnd={`url(#${isHovered ? 'arrowhead-hover' : 'arrowhead'})`}
+                                    markerEnd={edge.type === 'shared_movement' ? undefined : `url(#${isHovered ? 'arrowhead-hover' : 'arrowhead'})`}
                                 />
                                 {isHovered && (
                                     <text
@@ -355,7 +355,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                                         fontSize="10px"
                                         style={{ background: 'var(--color-bg)', textShadow: '0 0 4px var(--color-bg)' }}
                                     >
-                                        {edge.type.toLowerCase().replace('_', ' ')}
+                                        {edge.label || edge.type.toLowerCase().replace('_', ' ')}
                                     </text>
                                 )}
                             </g>
@@ -380,9 +380,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                                 style={{ cursor: 'pointer' }}
                             >
                                 {node.type === 'author' ? (
-                                    /* Person icon for authors */
                                     <g>
-                                        {/* Background circle */}
                                         <circle
                                             r={radius + 2}
                                             fill={color}
@@ -392,57 +390,27 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                                         />
                                         {/* Person silhouette */}
                                         <g transform={`scale(${radius / 14})`}>
-                                            {/* Head */}
                                             <circle cx="0" cy="-4" r="4" fill="white" opacity="0.9" />
-                                            {/* Body */}
-                                            <path
-                                                d="M-6,8 Q-6,2 0,2 Q6,2 6,8 L6,10 L-6,10 Z"
-                                                fill="white"
-                                                opacity="0.9"
-                                            />
+                                            <path d="M-6,8 Q-6,2 0,2 Q6,2 6,8 L6,10 L-6,10 Z" fill="white" opacity="0.9" />
                                         </g>
-                                        {/* Star badge for high influence */}
                                         {isCentral && (
                                             <g transform={`translate(${radius * 0.7}, ${-radius * 0.7})`}>
                                                 <circle r="5" fill="gold" />
-                                                <text
-                                                    textAnchor="middle"
-                                                    dy="3"
-                                                    fontSize="7"
-                                                    fill="black"
-                                                    fontWeight="bold"
-                                                >
-                                                    ★
-                                                </text>
+                                                <text textAnchor="middle" dy="3" fontSize="7" fill="black" fontWeight="bold">★</text>
                                             </g>
                                         )}
                                     </g>
                                 ) : node.type === 'book' ? (
-                                    /* Book icon */
                                     <g>
-                                        {/* Book shape */}
                                         <g transform={`scale(${radius / 10})`}>
-                                            {/* Book cover */}
-                                            <rect
-                                                x="-7"
-                                                y="-9"
-                                                width="14"
-                                                height="18"
-                                                rx="1"
-                                                fill={color}
-                                                stroke={isHovered ? 'white' : 'transparent'}
-                                                strokeWidth={isHovered ? 2 : 0}
-                                            />
-                                            {/* Spine */}
+                                            <rect x="-7" y="-9" width="14" height="18" rx="1" fill={color} stroke={isHovered ? 'white' : 'transparent'} strokeWidth={isHovered ? 2 : 0} />
                                             <rect x="-7" y="-9" width="3" height="18" fill="rgba(0,0,0,0.2)" />
-                                            {/* Pages */}
                                             <line x1="-2" y1="-5" x2="5" y2="-5" stroke="white" strokeWidth="1" opacity="0.6" />
                                             <line x1="-2" y1="-2" x2="5" y2="-2" stroke="white" strokeWidth="1" opacity="0.6" />
                                             <line x1="-2" y1="1" x2="5" y2="1" stroke="white" strokeWidth="1" opacity="0.6" />
                                         </g>
                                     </g>
                                 ) : (
-                                    /* Default circle for other types */
                                     <circle
                                         r={radius}
                                         fill={color}

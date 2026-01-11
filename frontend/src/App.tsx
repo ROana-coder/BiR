@@ -135,11 +135,30 @@ function AppContent() {
         if (geoError) console.error('Geo error:', geoError);
     }, [birthplacesData, settingsData, geoError]);
 
+    // History state
+    const [filterHistory, setFilterHistory] = useState<FilterState[]>([]);
+
     // Handlers
     const handleSearch = useCallback(() => {
         setSearchTriggered(true);
         refetchBooks();
-    }, [refetchBooks]);
+
+        // Update history
+        setFilterHistory(prev => {
+            // Avoid duplicates at the top of the stack
+            if (prev.length > 0 && JSON.stringify(prev[0]) === JSON.stringify(filters)) {
+                return prev;
+            }
+            const newHistory = [filters, ...prev];
+            return newHistory.slice(0, 5); // Keep last 5
+        });
+    }, [refetchBooks, filters]);
+
+    const handleRestoreFilter = useCallback((historyFilter: FilterState) => {
+        setFilters(historyFilter);
+        // Automatically trigger search? User might want to adjust first.
+        // Let's just restore inputs. User can click Search.
+    }, []);
 
     const handleBookClick = useCallback((book: Book) => {
         console.log('Selected book:', book);
@@ -332,6 +351,8 @@ function AppContent() {
                 onFiltersChange={setFilters}
                 onSearch={handleSearch}
                 isLoading={booksLoading}
+                history={filterHistory}
+                onHistorySelect={handleRestoreFilter}
             />
 
             {/* Main Content */}

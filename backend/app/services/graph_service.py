@@ -61,6 +61,7 @@ class GraphService:
             coauthor=include_coauthorship,
             movements=include_movements,
         )
+        cache_key += "_v3" # Force invalidation for merged labels
         
         # Try cache
         cached = await self.cache.get(cache_key)
@@ -69,7 +70,8 @@ class GraphService:
         
         # Collect all nodes and edges across hops
         all_nodes: dict[str, GraphNode] = {}
-        all_edges: list[GraphEdge] = []
+        all_nodes: dict[str, GraphNode] = {}
+        all_edges: dict[tuple, GraphEdge] = {}
         current_qids = set(author_qids)
         seen_qids = set(author_qids)
         
@@ -123,20 +125,39 @@ class GraphService:
                 # Map relationship type
                 edge_type = self._map_edge_type(rel_type)
                 
-                # Add edge (avoid duplicates)
-                edge = GraphEdge(
-                    source=source_qid,
-                    target=target_qid,
-                    type=edge_type,
-                )
+                # Determine source, target for sorting
+                if edge_type == EdgeType.SHARED_MOVEMENT:
+                    s, t = sorted([source_qid, target_qid])
+                else:
+                    s, t = source_qid, target_qid
                 
-                # Check for duplicate edges
-                edge_key = (source_qid, target_qid, edge_type)
-                if not any(
-                    (e.source, e.target, e.type) == edge_key 
-                    for e in all_edges
-                ):
-                    all_edges.append(edge)
+                edge_key = (s, t, edge_type)
+                
+                # Get label specific to this connection (e.g. movement name)
+                edge_label = None
+                if edge_type == EdgeType.SHARED_MOVEMENT:
+                    edge_label = row.get("movementLabel")
+
+                if edge_key in all_edges:
+                    # Merge labels for existing edges (e.g. multiple shared movements)
+                    existing_edge = all_edges[edge_key]
+                    if edge_label:
+                        if existing_edge.label:
+                            # Avoid duplicate labels
+                            current_labels = [l.strip() for l in existing_edge.label.split(", ")]
+                            if edge_label not in current_labels:
+                                existing_edge.label = f"{existing_edge.label}, {edge_label}"
+                        else:
+                            existing_edge.label = edge_label
+                else:
+                    # Create new edge
+                    edge = GraphEdge(
+                        source=s,
+                        target=t,
+                        type=edge_type,
+                        label=edge_label,
+                    )
+                    all_edges[edge_key] = edge
                 
                 # Queue for next hop
                 if target_qid not in seen_qids:
@@ -148,7 +169,7 @@ class GraphService:
         # Calculate centrality metrics
         graph_data = self._compute_graph_metrics(
             list(all_nodes.values()),
-            all_edges,
+            list(all_edges.values()),
         )
         
         # Cache result
@@ -168,7 +189,8 @@ class GraphService:
             "student_of": EdgeType.STUDENT_OF,
             "teacher_of": EdgeType.STUDENT_OF,  # Will swap direction
             "coauthor": EdgeType.AUTHORED,
-            "same_movement": EdgeType.MEMBER_OF,
+            "coauthor": EdgeType.AUTHORED,
+            "same_movement": EdgeType.SHARED_MOVEMENT,
         }
         return mapping.get(rel_type, EdgeType.INFLUENCED_BY)
     

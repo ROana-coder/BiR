@@ -20,6 +20,7 @@ export const COUNTRIES = [
     { qid: 'Q17', label: 'Japan' },
     { qid: 'Q148', label: 'China' },
     { qid: 'Q668', label: 'India' },
+    { qid: 'Q218', label: 'Romania' },
 ];
 
 // Common Wikidata QIDs for genres

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Book } from '../types';
 import { AuthorDetailModal } from './AuthorDetailModal';
+import { BookDetailModal } from './BookDetailModal';
 
 interface FilterContext {
     country?: string | null;
@@ -101,6 +102,7 @@ function generateFilename(filterContext?: FilterContext): string {
 
 export function AuthorWorksList({ books, filterContext }: AuthorWorksListProps) {
     const [selectedAuthorQid, setSelectedAuthorQid] = useState<string | null>(null);
+    const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
     // Track expanded authors for book list
     const [expandedAuthors, setExpandedAuthors] = useState<Record<string, boolean>>({});
@@ -215,15 +217,29 @@ export function AuthorWorksList({ books, filterContext }: AuthorWorksListProps) 
                         <div
                             className="text-left w-full group/btn cursor-pointer outline-none flex items-center justify-between"
                         >
-                            <h3 style={{
-                                fontSize: 'var(--font-size-lg)',
-                                fontWeight: 'var(--font-weight-bold)',
-                                color: 'var(--color-text-primary)',
-                                marginBottom: 'var(--spacing-3)',
-                                borderBottom: '1px solid var(--color-border)',
-                                paddingBottom: 'var(--spacing-3)',
-                            }}>
-                                {author}
+                            <h3
+                                onClick={() => handleAuthorClick(author)}
+                                style={{
+                                    fontSize: 'var(--font-size-lg)',
+                                    fontWeight: 'var(--font-weight-bold)',
+                                    color: 'var(--color-text-primary)',
+                                    marginBottom: 'var(--spacing-3)',
+                                    borderBottom: '1px solid var(--color-border)',
+                                    paddingBottom: 'var(--spacing-3)',
+                                    cursor: 'pointer',
+                                    transition: 'color var(--transition-fast)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = 'var(--color-accent)';
+                                    e.currentTarget.style.textDecoration = 'underline';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = 'var(--color-text-primary)';
+                                    e.currentTarget.style.textDecoration = 'none';
+                                }}
+                                title="Click to view author details"
+                            >
+                                {author} <svg style={{ width: '0.9em', height: '0.9em', marginLeft: '0.25em', display: 'inline-block', verticalAlign: 'middle', opacity: 0.4 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                             </h3>
                             <button
                                 onClick={() => toggleExpand(author)}
@@ -266,8 +282,26 @@ export function AuthorWorksList({ books, filterContext }: AuthorWorksListProps) 
                                         className="group hover:bg-zinc-700 transition-colors"
                                     >
                                         <div className="flex justify-between items-start gap-3">
-                                            <h4 className="text-sm font-bold text-zinc-100 group-hover:text-accent transition-colors leading-tight">
-                                                {book.title}
+                                            <h4
+                                                onClick={() => setSelectedBook(book)}
+                                                style={{
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 'bold',
+                                                    color: '#f4f4f5',
+                                                    cursor: 'pointer',
+                                                    transition: 'color 0.15s, text-decoration 0.15s',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-accent)';
+                                                    e.currentTarget.style.textDecoration = 'underline';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = '#f4f4f5';
+                                                    e.currentTarget.style.textDecoration = 'none';
+                                                }}
+                                                title="Click to view book details"
+                                            >
+                                                {book.title} <svg style={{ width: '0.9em', height: '0.9em', marginLeft: '0.25em', display: 'inline-block', verticalAlign: 'middle', opacity: 0.4 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                                             </h4>
                                             <span className="text-xs text-zinc-500 font-mono whitespace-nowrap pt-0.5 bg-black/20 px-1.5 py-0.5 rounded">
                                                 {book.publication_year || '-'}
@@ -304,6 +338,13 @@ export function AuthorWorksList({ books, filterContext }: AuthorWorksListProps) 
                 <AuthorDetailModal
                     qid={selectedAuthorQid}
                     onClose={() => setSelectedAuthorQid(null)}
+                />
+            )}
+
+            {selectedBook && (
+                <BookDetailModal
+                    book={selectedBook}
+                    onClose={() => setSelectedBook(null)}
                 />
             )}
         </>

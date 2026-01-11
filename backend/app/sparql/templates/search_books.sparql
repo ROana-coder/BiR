@@ -1,7 +1,7 @@
 {# SPARQL template for searching books/literary works #}
 {# Optimized for Wikidata Query Service performance #}
 
-SELECT ?book ?bookLabel ?author ?authorLabel ?pubDate (GROUP_CONCAT(DISTINCT ?genreLabel; separator=", ") AS ?genres) (GROUP_CONCAT(DISTINCT ?awardLabel; separator=", ") AS ?awards)
+SELECT ?book ?bookLabel ?author ?authorLabel ?pubDate ?publisher ?publisherLabel ?pubPlace ?pubPlaceLabel ?pubPlaceCountry ?pubPlaceCountryLabel (GROUP_CONCAT(DISTINCT ?genreLabel; separator=", ") AS ?genres) (GROUP_CONCAT(DISTINCT ?awardLabel; separator=", ") AS ?awards) (GROUP_CONCAT(DISTINCT ?languageLabel; separator=", ") AS ?languages)
 WHERE {
   {
     SELECT DISTINCT ?book ?pubDate 
@@ -44,8 +44,14 @@ WHERE {
   
   OPTIONAL { ?book wdt:P136 ?genre. ?genre rdfs:label ?genreLabel. FILTER(LANG(?genreLabel) = "en") }
   OPTIONAL { ?book wdt:P166 ?award. ?award rdfs:label ?awardLabel. FILTER(LANG(?awardLabel) = "en") }
+  OPTIONAL { ?book wdt:P123 ?publisher. }
+  OPTIONAL { ?book wdt:P407 ?language. ?language rdfs:label ?languageLabel. FILTER(LANG(?languageLabel) = "en") }
+  OPTIONAL { 
+    ?book wdt:P291 ?pubPlace. 
+    OPTIONAL { ?pubPlace wdt:P17 ?pubPlaceCountry. }
+  }
   
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,auto,it,fr,de,es". }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,ro,auto,it,fr,de,es,pt,pl,hu". }
 }
-GROUP BY ?book ?bookLabel ?author ?authorLabel ?pubDate
+GROUP BY ?book ?bookLabel ?author ?authorLabel ?pubDate ?publisher ?publisherLabel ?pubPlace ?pubPlaceLabel ?pubPlaceCountry ?pubPlaceCountryLabel
 ORDER BY DESC(?pubDate)

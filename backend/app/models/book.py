@@ -68,6 +68,18 @@ class Book(BaseModel):
     # Language (P407)
     language: str | None = Field(None, description="Original language")
     language_qid: str | None = Field(None, description="Language QID")
+    languages: list[str] = Field(
+        default_factory=list,
+        description="All languages/translations"
+    )
+    language_qids: list[str] = Field(
+        default_factory=list,
+        description="All language QIDs"
+    )
+
+    # Publisher (P123)
+    publisher: str | None = Field(None, description="Publisher name")
+    publisher_qid: str | None = Field(None, description="Publisher QID")
 
     # Awards (P166)
     awards: list[str] = Field(
