@@ -30,6 +30,7 @@ Literature Explorer is a sophisticated web application that enables users to exp
 - [API Reference](./docs/API_REFERENCE.md) - Complete API endpoint documentation
 - [Wikidata Guide](./docs/WIKIDATA_GUIDE.md) - SPARQL queries and Wikidata integration
 - [RDF Knowledge Model](./docs/RDF_KNOWLEDGE_MODEL.md) - RDF vocabularies and ontologies used
+- [Design Decisions](./DESIGN_DECISIONS.md) - Key architectural and UX choices
 
 ---
 
@@ -86,9 +87,12 @@ The application uses Jinja2-templated SPARQL queries located in `/backend/app/sp
 *   **Interactive Visualizations**:
     *   **🗺️ Map View**: Dual-layer geospatial visualization showing **Author Birthplaces** (Red Pins) and **Narrative Locations** (Blue Pins) to contrast where authors lived vs. where their stories are set.
     *   **🔗 Network Graph**: Force-directed graph revealing influence networks and shared stylistic movements.
+    *   **📜 Works Tab**: Dedicated view for search results with award badges and structured author-book grouping.
     *   **📅 Timeline**: Interactive timeline of literary publications to identify historical trends.
+*   **Smart Search UX**:
+    *   **Manual Trigger**: Performance-optimized search that runs only when requested.
+    *   **Search History**: Dropdown menu to instantly restore recent complex filter combinations.
 *   **Faceted Search**: Filter large datasets by Nationality, Genre, and Time Period.
-*   **Smart Recommendations**: Suggests similar authors based on shared movements, genres, and eras using Jaccard similarity indices.
 *   **Resilient Architecture**:
     *   **Caching**: Redis-based "Cache-Aside" strategy to handle Wikidata API limits and improve latency.
     *   **Microservices**: Modular FastAPI backend and React frontend.
@@ -96,26 +100,40 @@ The application uses Jinja2-templated SPARQL queries located in `/backend/app/sp
 
 ---
 
-## 🏛️ Use Cases Implemented
+## 🎛️ Quick Filters
 
-### 1. The "Lost Generation" & Transatlantic Modernism
+The application provides pre‑defined quick filter presets to instantly explore literary collections:
+
+### 1. Lost Generation 🇺🇸
 **Goal**: Visualize the influence of American expatriate writers in Europe.
-*   **Visual Proof**: The Map View highlights a cluster of **Birthplaces** in the USA (Midwest/East Coast) while the **Narrative Locations** and biography centers shift to Paris, London, and Spain.
+* **Visual Proof**: The Map View highlights a cluster of **Birthplaces** in the USA (Midwest/East Coast) while the biography centers shift to Paris, London, and Spain.
 
-### 2. Magic Realism: A Global Phenomenon
-**Goal**: Trace the spread of a specific genre beyond its Latin American roots.
-*   **Visual Proof**: Selecting the "Magic Realism" preset reveals a dense network of Latin American authors (García Márquez, Allende) connected to global authors (Murakami, Rushdie), visualizing cross-cultural literary influence.
+### 2. Victorian Era 🇬🇧
+**Goal**: Explore the literary output of 19th‑century Britain.
+* **Visual Proof**: Selecting the **Victorian Era** preset immediately filters for UK novels between 1837‑1901, visualizing the dense connections between Dickens, Brontë, and Eliot in the network graph.
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Technology Stack & Rationale
 
-| Layer | Technologies |
-|-------|--------------|
-| **Backend** | Python 3.11, FastAPI, Pydantic, SPARQLWrapper, NetworkX, scikit-learn, tenacity |
-| **Frontend** | React 18, TypeScript, Vite, D3.js, React-Leaflet, TanStack Query |
-| **Data Source** | Wikidata SPARQL Endpoint |
-| **Infrastructure** | Docker, Docker Compose, Redis 7 |
+### 🔙 Backend (Python / FastAPI)
+*   **FastAPI**: Chosen for its high performance (Starlette), native async support (essential for handling long-running I/O bound SPARQL queries), and automatic Swagger documentation.
+*   **Pydantic**: Enforces strict data validation to sanitize variable/incomplete RDF data from Wikidata before it reaches the frontend.
+*   **SPARQLWrapper**: The standard, robust Python library for communicating with SPARQL endpoints.
+*   **NetworkX**: Used for server-side graph algorithms (e.g., Betweenness Centrality) to offload heavy computation from the client.
+*   **Tenacity**: Implements exponential backoff for resilience against public API rate limits and flakes.
+
+### 🎨 Frontend (React / TypeScript)
+*   **React 18**: Component-based architecture ideal for managing the complex state of interactive dashboards.
+*   **TypeScript**: Critical for maintaining code quality when mapping complex, deeply nested RDF data structures to UI components.
+*   **D3.js**: The industry standard for bespoke visualizations; allows for custom force simulations that standard chart libraries cannot handle.
+*   **TanStack Query**: Manages server state, caching, and background refetching, significantly reducing boilerplate for async data loading.
+*   **React-Leaflet**: Lightweight and React-friendly wrapper for Leaflet, perfect for rendering cluster maps without WebGL overhead.
+
+### 💾 Data & Infrastructure
+*   **Wikidata (SPARQL)**: A free, massive, and live knowledge graph. Chosen over static databases to ensure data is always current and links to the wider Semantic Web.
+*   **Redis**: Implements "cache-aside" pattern. Essential to mitigate the latency of SPARQL queries (which can take 2-5s) and avoid hitting Wikidata rate limits.
+*   **Docker**: Ensures consistent environments for the multi-service stack (Backend + Frontend + Redis) and simplifies deployment.
 
 ---
 
@@ -156,6 +174,26 @@ The application uses Jinja2-templated SPARQL queries located in `/backend/app/sp
     │ SPARQL API   │                      │    Cache     │
     └──────────────┘                      └──────────────┘
 ```
+
+## 🔄 Data Flow Workflow
+
+1.  **User Interaction**: User configures filters (e.g., "French Classics") and clicks **SEARCH**.
+2.  **Frontend Request**:
+    *   The manual trigger in `FacetedSearchSidebar` invokes the `useSearchBooks` hook.
+    *   Axios sends a `GET` request to `/api/search/books` with query parameters.
+3.  **Backend Processing**:
+    *   **Cache Check**: `SearchService` generates a unique cache key based on parameters and checks Redis.
+    *   **Cache Miss**: If data is missing/stale:
+        1.  The `WikidataClient` loads the `search_books.sparql` Jinja2 template.
+        2.  Parameters are injected to construct a valid SPARQL query.
+        3.  The query is sent to the **Wikidata SPARQL Endpoint** (with retry logic).
+        4.  Raw RDF results are parsed into Pydantic models (`Book`, `Author`).
+        5.  Clean data is stored in Redis (TTL: 24h).
+4.  **Optimization**: The backend performs "Genre Fallback" locally if specific genres are missing.
+5.  **Response Delivery**: Structured JSON is returned to the React frontend.
+6.  **Visualization**:
+    *   State updates trigger the **Network Graph** (D3.js) to recalculate node positions.
+    *   The **Works Tab** renders the list with newly fetched award badges.
 
 ---
 
@@ -340,13 +378,6 @@ npm run dev
 - `publications`: Book publication places (P291 + P625)
 - `settings`: Narrative/story locations (P840 + P625)
 
-#### Recommendations API (`/api/recommendations`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/recommendations/similar/{qid}` | Find similar authors |
-
-Uses Jaccard similarity on: movements (P135), genres (P136), awards (P166), time period.
 
 ---
 
@@ -407,15 +438,6 @@ Processes geographic data for map visualization.
 - Resolves P625 coordinates for multiple contexts
 - Server-side clustering when points > 1000
 - Multiple layer support
-
-### RecommendationService (`recommendation_service.py`)
-Author recommendations using Jaccard similarity.
-
-**Similarity Factors:**
-- Literary movements (P135)
-- Genres of works (P136)
-- Awards received (P166)
-- Time period (birth decade)
 
 ---
 
@@ -604,7 +626,7 @@ FLUSHALL
 | [Frontend README](./frontend/README.md) | Frontend components and setup |
 | [API Reference](./docs/API_REFERENCE.md) | Complete REST API documentation |
 | [Wikidata Guide](./docs/WIKIDATA_GUIDE.md) | SPARQL queries and Wikidata integration |
-| [Architecture Decisions](./docs/ARCHITECTURE.md) | ADRs explaining design choices |
+| [Design Decisions](./DESIGN_DECISIONS.md) | Key architectural and UX choices |
 | [Contributing Guide](./CONTRIBUTING.md) | How to contribute to the project |
 
 ---

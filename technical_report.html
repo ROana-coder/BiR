@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" prefix="schema: http://schema.org sa: http://ns.science.ai/sa/">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Literature Explorer - Comprehensive Technical Report</title>
+    <link rel="stylesheet" href="https://w3c.github.io/scholarly-html/css/scholarly.min.css">
+    <script src="https://w3c.github.io/scholarly-html/js/scholarly.min.js"></script>
+    <style>
+        body {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: "Georgia", serif;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+
+        code {
+            font-family: "Consolas", "Monaco", monospace;
+            color: #d63384;
+        }
+
+        .property-table,
+        .endpoint-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .property-table th,
+        .endpoint-table th {
+            background: #eee;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .property-table td,
+        .endpoint-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        .diagram {
+            text-align: center;
+            margin: 30px 0;
+            font-family: sans-serif;
+        }
+
+        .note {
+            background: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            padding: 10px;
+            margin: 15px 0;
+        }
+
+        .warning {
+            background: #ffffcc;
+            border-left: 6px solid #ffeb3b;
+            padding: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body typeof="sa:ScholarlyArticle" resource="#article">
+    <header typeof="sa:CoverPage">
+        <h1 property="schema:name">Literature Explorer</h1>
+        <h2 property="schema:description">A Semantic Web Application for Literary Network Analysis</h2>
+    </header>
+    <nav typeof="sa:TableOfContents" role="doc-toc">
+        <ol>
+            <li><a href="#abstract">Abstract</a></li>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#data-structures">Internal Data Structures &amp; Models</a></li>
+            <li><a href="#api-architecture">Web System Architecture &amp; API</a></li>
+            <li><a href="#rdf-knowledge-model">RDF-based Knowledge Model &amp; Ontology</a></li>
+            <li><a href="#external-data-pragmatics">Pragmatic Use of External Data</a></li>
+            <li><a href="#user-guide">User Guide &amp; Case Studies</a></li>
+        </ol>
+    </nav>
+    <div role="contentinfo" typeof="schema:Person" about="#author">
+        <dl>
+            <dt>Authors</dt>
+            <dd property="schema:author">Rotaru Oana-Dumitrita</dd>
+            <dt>Date</dt>
+            <dd property="schema:datePublished" content="2026-01-11">2026-01-11</dd>
+            <dt>Status</dt>
+            <dd>Final Technical Report</dd>
+            <dt>Version</dt>
+            <dd property="schema:version">2.0.0 (Expanded)</dd>
+        </dl>
+    </div>
+    <main typeof="sa:ScholarlyArticle" resource="#article-main">
+        <section id="abstract" typeof="sa:Abstract" role="doc-abstract">
+            <h2>Abstract</h2>
+            <p>
+                This report presents a comprehensive technical analysis of <strong>Literature Explorer</strong>, a
+                microservice-based web platform
+                designed to query, visualize, and analyze global literary networks. By leveraging <strong>Semantic
+                    Web</strong> technologies and
+                <strong>Linked Data</strong> principles, the system moves beyond traditional text search to enable
+                graph-based exploration of
+                authors, movements, and geographical migrations. The architecture integrates a high-performance
+                <strong>FastAPI</strong> backend,
+                a reactive <strong>TypeScript</strong> frontend, and a robust <strong>Wikidata</strong> ingestion
+                pipeline,
+                supported by
+                a strict local <strong>RDF Ontology</strong> for data validation. This document details the internal
+                data
+                structures,
+                API specifications, knowledge models, and practical application of external data sources.
+            </p>
+        </section>
+
+        <section id="introduction" role="doc-introduction">
+            <h2>1. Introduction</h2>
+            <p>
+                The digitization of literary history has created vast datasets, yet accessing them meaningfully remains
+                a
+                challenge.
+                Static databases often become outdated, while raw SPARQL endpoints are inaccessible to general users.
+                <strong>Literature Explorer</strong> bridges this gap by providing a user-friendly interface powered by
+                the
+                live, community-curated
+                knowledge of Wikidata. It answers complex questions such as <em>"How did the 'Lost Generation' migrate
+                    across Europe?"</em> or
+                <em>"Who influenced the pioneers of Magic Realism?"</em> through dynamic visualizations rather than
+                static
+                lists.
+            </p>
+        </section>
+
+        <!-- ============================================================================================== -->
+
+        <section id="data-structures">
+            <h2>2. Internal Data Structures & Models</h2>
+            <p>
+                Data consistency is maintained across the stack using strict schemas. The backend uses
+                <strong>Pydantic</strong> models
+                for validation and serialization, which are mirrored by <strong>TypeScript interfaces</strong> in the
+                frontend.
+                This dual-schema approach ensures type safety from the database layer to the UI component.
+            </p>
+
+            <h3>2.1 Author Entity (Person)</h3>
+            <p>
+                The <code>Author</code> model is the central entity, aggregating biographical data (dates, places) and
+                relational data
+                (movements, influences). It maps to <code>foaf:Person</code> and <code>schema:Person</code>.
+            </p>
+            <table class="property-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>RDF Mapping</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>qid</code></td>
+                        <td>String (Pattern: <code>^Q\d+$</code>)</td>
+                        <td><code>uid</code></td>
+                        <td>Unique Wikidata Identifier.</td>
+                    </tr>
+                    <tr>
+                        <td><code>name</code></td>
+                        <td>String</td>
+                        <td><code>rdfs:label</code></td>
+                        <td>Primary label in user's language.</td>
+                    </tr>
+                    <tr>
+                        <td><code>birth_date</code></td>
+                        <td>Date (ISO 8601)</td>
+                        <td><code>wdt:P569</code></td>
+                        <td>Date of birth.</td>
+                    </tr>
+                    <tr>
+                        <td><code>birth_place</code></td>
+                        <td><code>Location</code> Object</td>
+                        <td><code>wdt:P19</code></td>
+                        <td>Geographic birthplace with coordinates.</td>
+                    </tr>
+                    <tr>
+                        <td><code>nationality</code></td>
+                        <td>String</td>
+                        <td><code>wdt:P27</code></td>
+                        <td>Country of citizenship label.</td>
+                    </tr>
+                    <tr>
+                        <td><code>movements</code></td>
+                        <td>List[String]</td>
+                        <td><code>wdt:P135</code></td>
+                        <td>Associated literary movements (e.g., "Modernism").</td>
+                    </tr>
+                    <tr>
+                        <td><code>influenced_by</code></td>
+                        <td>List[String]</td>
+                        <td><code>wdt:P737</code></td>
+                        <td>List of authors who influenced this person.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.2 The Book Model (CreativeWork)</h3>
+            <p>
+                Represents a literary work, mapping to <code>schema:CreativeWork</code> or <code>wd:Q7725634</code>
+                (Literary Work).
+            </p>
+            <pre><code class="language-python">
+class Book(BaseModel):
+    qid: str
+    title: str                  # wdt:P1476 or rdfs:label
+    publication_year: int       # Extracted from wdt:P577
+    authors: List[str]          # wdt:P50 (Author labels)
+    author_qids: List[str]      # wdt:P50 (Author QIDs for linking)
+    genre: str | None           # wdt:P136
+    narrative_locations: List[Location]  # wdt:P840 (Story settings)
+    awards: List[str]           # wdt:P166
+            </code></pre>
+
+            <h3>2.3 Graph Visualization Models</h3>
+            <p>
+                To support the <strong>D3.js Force-Directed Graph</strong>, we define specialized models that decouple
+                the
+                visualization logic from the data.
+                The backend pre-calculates topology metrics like <em>Centrality</em> to offload heavy computation from
+                the
+                client.
+            </p>
+            <pre><code class="language-typescript">
+// Frontend Interface (mirrors Backend Pydantic)
+export interface GraphNode {
+    id: string;             // The QID
+    label: string;          // specific node label
+    type: 'author' | 'movement' | 'book';
+    centrality: number;     // Normalized (0-1) betweenness centrality
+    degree: number;         // Number of connections
+    metadata: Record<string, unknown>; // birth year, country, etc.
+}
+
+export interface GraphEdge {
+    source: string;         // QID of source
+    target: string;         // QID of target
+    type: 'influenced_by' | 'student_of' | 'shared_movement';
+    weight: number;         // Edge weight for physics simulation
+}
+            </code></pre>
+        </section>
+
+        <!-- ============================================================================================== -->
+
+        <section id="api-architecture">
+            <h2>3. Web System Architecture & API</h2>
+            <p>
+                The system employs a <strong>Microservices Architecture</strong> orchestrated via Docker Compose.
+                The Backend (FastAPI) acts as an intelligent proxy and aggregator between the Frontend (React) and the
+                external Knowledge Graph (Wikidata).
+            </p>
+
+            <h3>3.1 High-Level Architecture Diagram</h3>
+            <div class="diagram">
+                <pre>
+    [ Client Browser ]
+           |
+      (HTTP / JSON)
+           |
+    [ Nginx / Vite Dev Server ]
+           |
+    +------+---------------------------+
+    |      Backend Container           |
+    |  [ FastAPI Router ]              |
+    |          |                       |
+    |  [ Service Layer ]               |
+    |    /     |     \                 |
+    | [Search] [Graph] [Geo]           |
+    |    |     |     |                 |
+    |  [ WikidataClient ] <---(Cache)---> [ Redis Container ]
+    |          |                       |      (Cache-Aside)
+    +----------+-----------------------+
+               |
+        (SPARQL via HTTP)
+               |
+     [ Wikidata Query Service ]
+            </pre>
+            </div>
+
+            <h3>3.2 Implemented API Endpoints (REST)</h3>
+            <p>
+                The API adheres to REST principles, using standard HTTP verbs, status codes, and JSON representations.
+            </p>
+
+            <h4>GET /api/search/books</h4>
+            <p>Performs a multi-faceted search for literary works.</p>
+            <ul class="endpoint-details">
+                <li><strong>Parameters:</strong>
+                    <ul>
+                        <li><code>country</code>: Nationality QID (e.g., <code>Q30</code>).</li>
+                        <li><code>genre</code>: Genre QID (e.g., <code>Q223393</code> for Genre or specific literary
+                            forms).
+                        </li>
+                        <li><code>year_start</code> / <code>year_end</code>: Integer years.</li>
+                        <li><code>limit</code>: Pagination limit (default 100).</li>
+                    </ul>
+                </li>
+                <li><strong>Response:</strong> JSON list of <code>Book</code> objects.</li>
+            </ul>
+
+            <h4>GET /api/graph/network</h4>
+            <p>Builds the influence network graph starting from a seed set of authors.</p>
+            <ul class="endpoint-details">
+                <li><strong>Parameters:</strong>
+                    <ul>
+                        <li><code>authors</code>: List of QIDs.</li>
+                        <li><code>depth</code>: Traversal depth (how many "hops" key P737). Default: 2.</li>
+                        <li><code>include_movements</code>: Boolean. If true, adds Movement nodes connecting authors.
+                        </li>
+                    </ul>
+                </li>
+                <li><strong>Logic:</strong> Performs a BFS traversal on Wikidata graph structure, computes NetworkX
+                    centrality measures, returns <code>GraphData</code>.</li>
+            </ul>
+
+            <h4>GET /api/geo/locations</h4>
+            <p>Aggregates geospatial points for MapBox/Leaflet visualization.</p>
+            <ul class="endpoint-details">
+                <li><strong>Parameters:</strong>
+                    <ul>
+                        <li><code>layer</code>: <code>birthplaces</code> or <code>deathplaces</code>.</li>
+                    </ul>
+                </li>
+                <li><strong>Response:</strong> <code>GeoResponse</code> with arrays of <code>GeoPoint</code> and
+                    pre-calculated clusters.</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================================================== -->
+
+        <section id="rdf-knowledge-model">
+            <h2>4. RDF-based Knowledge Model & Ontology</h2>
+            <p>
+                While the application consumes broad data from Wikidata, it relies on a local <strong>OWL
+                    Ontology</strong>
+                (<code>literature.ttl</code>)
+                to define the canonical schema and valid relationships. This ensures that the application has a semantic
+                "truth" independent of external data fluctuations.
+            </p>
+
+            <h3>4.1 Internal Vocabulary & Reuse</h3>
+            <p>The system reuses standard vocabularies to ensure interoperability:</p>
+            <ul>
+                <li><strong>FOAF (Friend of a Friend)</strong>: Used for identifying persons (`foaf:Person`) and names
+                    (`foaf:name`).</li>
+                <li><strong>Schema.org</strong>: Mapping for `schema:CreativeWork`, `schema:author`,
+                    `schema:datePublished`.
+                </li>
+                <li><strong>Dublin Core (dcterms)</strong>: Metadata for the ontology itself (creator, license).</li>
+            </ul>
+
+            <h3>4.2 Class Hierarchy</h3>
+            <pre><code class="language-turtle">
+:Author a owl:Class ;
+    rdfs:subClassOf foaf:Person ;
+    owl:equivalentClass wd:Q482980 .
+
+:LiteraryWork a owl:Class ;
+    rdfs:subClassOf schema:CreativeWork ;
+    owl:equivalentClass wd:Q7725634 .
+
+:Novel a owl:Class ;
+    rdfs:subClassOf :LiteraryWork ;
+    owl:equivalentClass wd:Q8261 .
+            </code></pre>
+
+            <h3>4.3 SHACL Validation</h3>
+            <p>
+                To address the "Open World Assumption" of RDF (where missing data is not an error), we use <strong>SHACL
+                    (Shapes Constraint Language)</strong>
+                to enforce "Closed World" validation for our UI components. For example, an Author <em>must</em> have a
+                name
+                to be displayed.
+            </p>
+            <pre><code class="language-turtle">
+lit:AuthorShape a sh:NodeShape ;
+    sh:targetClass lit:Author ;
+    sh:property [
+        sh:path lit:name ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "An author must have a name." ;
+    ] ;
+    sh:property [
+        sh:path lit:birthDate ;
+        sh:datatype xsd:date ;
+        sh:severity sh:Warning ;
+    ] .
+            </code></pre>
+        </section>
+
+        <!-- ============================================================================================== -->
+
+        <section id="external-data-pragmatics">
+            <h2>5. Pragmatic Use of External Data</h2>
+            <p>
+                The system queries the <strong>Wikidata Query Service (WDQS)</strong> dynamically. This presents
+                challenges
+                like latency,
+                timeouts, and rate limits, which are handled via robust engineering patterns.
+            </p>
+
+            <h3>5.1 Advanced SPARQL Querying</h3>
+            <p>
+                We utilize Jinja2 templating to construct complex SPARQL queries. Below is the logic for the
+                <strong>Influence Graph</strong>,
+                which performs a 2-hop traversal and unifies multiple relationship types (influenced by, student of,
+                same
+                movement).
+            </p>
+            <pre><code class="language-sparql">
+SELECT DISTINCT ?source ?sourceLabel ?target ?targetLabel ?relationType
+WHERE {
+  VALUES ?source { wd:Q23434 wd:Q8662 }  # Seed authors (Hemingway, Fitzgerald)
+  
+  # Relationship Union
+  { ?source wdt:P737 ?target. BIND("influenced_by" AS ?relationType) }
+  UNION
+  { ?target wdt:P737 ?source. BIND("influenced" AS ?relationType) }
+  UNION
+  { ?source wdt:P1066 ?target. BIND("student_of" AS ?relationType) }
+  UNION
+  { 
+    ?source wdt:P135 ?m. ?target wdt:P135 ?m. 
+    FILTER(?source != ?target) 
+    BIND("shared_movement" AS ?relationType) 
+  }
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,auto". }
+}
+LIMIT 500
+            </code></pre>
+
+            <h3>5.2 Infrastructure Resilience</h3>
+            <p>
+                <strong>Cache-Aside Pattern:</strong>
+                <br>
+                1. Generate SHA256 hash of the SPARQL query string.<br>
+                2. Check Redis for this hash.<br>
+                3. If hit, return JSON instantly (< 50ms).<br>
+                    4. If miss, execute SPARQL against Wikidata (~2000ms), store in Redis, and return.<br>
+            </p>
+            <p>
+                <strong>Exponential Backoff:</strong>
+                <br>
+                The <code>WikidataClient</code> uses the <code>tenacity</code> library to retry on HTTP 429 (Rate Limit)
+                and
+                503 (Service Unavailable) errors,
+                waiting exponentially (2s, 4s, 8s) to be a "good citizen" of the public API.
+            </p>
+        </section>
+
+        <!-- ============================================================================================== -->
+
+        <section id="user-guide">
+            <h2>6. User Guide & Case Studies</h2>
+
+            <div class="note">
+                The application is accessible at <code>http://localhost:3001</code>. The main navigation resides in the
+                left
+                sidebar,
+                featuring specific views for Search, Graph, Map, and Timeline.
+            </div>
+
+            <h3>Case Study 1: The "Lost Generation"</h3>
+            <p><strong>Objective:</strong> Analyze the migration patterns of American expatriate writers in the 1920s.
+            </p>
+            <ol>
+                <li><strong>Action:</strong> Open the sidebar and select the preset filter <strong>"Lost Generation
+                        🇺🇸"</strong>.</li>
+                <li><strong>System:</strong> Automatically applies filters: Country=USA, Genre=Novel, Year=1920-1940.
+                </li>
+                <li><strong>Action:</strong> Click on the <strong>Map View</strong> tab.</li>
+                <li><strong>Result:</strong> One distinct cluster appears.
+                    <ul>
+                        <li><strong>Red Pins (Birthplaces):</strong> Clustered in the US Midwest (Hemingway/Chicago,
+                            Fitzgerald/St. Paul).</li>
+                    </ul>
+                </li>
+                <li><strong>Conclusion:</strong> Visually confirms the "expatriate" definition of the movement.</li>
+            </ol>
+
+            <h3>Case Study 2: Victorian Literary Networks</h3>
+            <p><strong>Objective:</strong> Discover the intellectual connections between 19th-century British novelists.
+            </p>
+            <ol>
+                <li><strong>Action:</strong> Select <strong>"Victorian Era 🇬🇧"</strong> from Quick Filters.</li>
+                <li><strong>Action:</strong> Switch to the <strong>Network Graph</strong> tab.</li>
+                <li><strong>Result:</strong> A force-directed graph renders with nodes sized by centrality.
+                    <ul>
+                        <li><strong>Central Nodes:</strong> Charles Dickens and George Eliot appear largest, indicating
+                            they
+                            are central figures.</li>
+                        <li><strong>Connections:</strong> Edges reveal that many authors were "influenced by" Walter
+                            Scott
+                            (a common ancestor node).</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Case Study 3: Validating Ontology Compliance</h3>
+            <p><strong>Objective:</strong> Ensure that incoming data from Wikidata meets our strict internal schema
+                (e.g.
+                required birth dates).</p>
+            <ol>
+                <li><strong>Action:</strong> The system runs a background validation job (via
+                    <code>ValidationRouter</code>).
+                </li>
+                <li><strong>Process:</strong> It fetches 50 authors and checks them against
+                    <code>lit:AuthorShape</code>.
+                </li>
+                <li><strong>Result:</strong> The API returns a JSON report:
+                    <code>{ valid: 48, invalid: 2, errors: ["Missing birth_date for Q123"] }</code>.
+                </li>
+                <li><strong>Benefit:</strong> The frontend gracefully filters out the 2 invalid authors to prevent
+                    crashing
+                    the Timeline view, which strictly requires dates.</li>
+            </ol>
+        </section>
+
+        <section id="references" typeof="sa:References" role="doc-bibliography">
+            <h2>7. References</h2>
+            <ol style="list-style-type: decimal; margin-left: 2em;">
+                <li property="schema:citation">
+                    <span>W3C Scholarly HTML.</span> <a href="https://w3c.github.io/scholarly-html/" target="_blank"
+                        rel="noopener">https://w3c.github.io/scholarly-html/</a>
+                </li>
+                <li property="schema:citation">
+                    <span>Wikidata: A Free Collaborative Knowledgebase.</span> <a href="https://www.wikidata.org/"
+                        target="_blank" rel="noopener">https://www.wikidata.org/</a>
+                </li>
+                <li property="schema:citation">
+                    <span>FastAPI Documentation.</span> <a href="https://fastapi.tiangolo.com/" target="_blank"
+                        rel="noopener">https://fastapi.tiangolo.com/</a>
+                </li>
+                <li property="schema:citation">
+                    <span>D3.js Data-Driven Documents.</span> <a href="https://d3js.org/" target="_blank"
+                        rel="noopener">https://d3js.org/</a>
+                </li>
+                <li property="schema:citation">
+                    <span>SHACL - Shapes Constraint Language.</span> <a href="https://www.w3.org/TR/shacl/"
+                        target="_blank" rel="noopener">https://www.w3.org/TR/shacl/</a>
+                </li>
+                <li property="schema:citation">
+                    <span>Redis Documentation.</span> <a href="https://redis.io/docs/" target="_blank"
+                        rel="noopener">https://redis.io/docs/</a>
+                </li>
+                <li property="schema:citation">
+                    <span>Python Official Documentation.</span> <a href="https://docs.python.org/3/" target="_blank"
+                        rel="noopener">https://docs.python.org/3/</a>
+                </li>
+            </ol>
+        </section>
+        <style>
+            /* Removed restrictive display:none for headers to allow '7. References' to show */
+            section#references ol {
+                list-style-type: decimal !important;
+                margin-left: 2em !important;
+            }
+
+            section#references li {
+                font-size: 1.0em;
+                /* Adjusted size for better readability */
+                margin-bottom: 0.5em;
+                color: #222 !important;
+            }
+
+            section#references a {
+                word-break: break-all;
+                color: #1a0dab !important;
+                text-decoration: underline !important;
+            }
+        </style>
+
+        <footer typeof="sa:Footnote">
+            <p>Technologies: Python, FastAPI, React, D3.js, Redis, SPARQL, Wikidata.</p>
+        </footer>
+</body>
+
+</html>

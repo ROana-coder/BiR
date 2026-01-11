@@ -12,7 +12,6 @@ from app.routers import (
     search_router,
     graph_router,
     geo_router,
-    recommendations_router,
 )
 from app.routers.ontology import router as ontology_router
 from app.routers.validation import router as validation_router
@@ -88,7 +87,7 @@ app = FastAPI(
     - **Search**: Query books by country, genre, time period (SPARQL-based)
     - **Graph**: Visualize author relationships and influence networks (RDF properties P737, P1066)
     - **Geography**: Map birthplaces, publications, and story settings (GeoSPARQL)
-    - **Recommendations**: Discover similar authors using Jaccard similarity
+
     
     ## Wikidata Integration
     
@@ -119,7 +118,7 @@ app.add_middleware(
 app.include_router(search_router)
 app.include_router(graph_router)
 app.include_router(geo_router)
-app.include_router(recommendations_router)
+
 app.include_router(ontology_router)
 app.include_router(validation_router)
 

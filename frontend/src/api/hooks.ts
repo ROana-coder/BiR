@@ -7,7 +7,6 @@ import type {
     Book,
     GraphData,
     GeoResponse,
-    SimilarAuthor,
     SearchParams,
     GraphParams,
     GeoParams,
@@ -31,10 +30,7 @@ export const queryKeys = {
         locations: (params: GeoParams) => ['geo', 'locations', params] as const,
         authorLocations: (qid: string) => ['geo', 'authorLocations', qid] as const,
     },
-    recommendations: {
-        all: ['recommendations'] as const,
-        similar: (qid: string, limit?: number) => ['recommendations', 'similar', qid, limit] as const,
-    },
+
 };
 
 // === Search Hooks ===
@@ -122,16 +118,4 @@ export function useAuthorLocations(
 
 // === Recommendation Hooks ===
 
-export function useSimilarAuthors(
-    qid: string,
-    limit = 10,
-    options?: Omit<UseQueryOptions<SimilarAuthor[], Error>, 'queryKey' | 'queryFn'>
-) {
-    return useQuery({
-        queryKey: queryKeys.recommendations.similar(qid, limit),
-        queryFn: () => api.getSimilarAuthors(qid, limit),
-        staleTime: 10 * 60 * 1000,
-        enabled: !!qid,
-        ...options,
-    });
-}
+

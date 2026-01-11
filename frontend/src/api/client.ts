@@ -8,7 +8,6 @@ import type {
     Author,
     GraphData,
     GeoResponse,
-    SimilarAuthor,
     SearchParams,
     GraphParams,
     GeoParams,
@@ -100,12 +99,7 @@ export async function getAuthorLocations(qid: string): Promise<Record<string, Ge
 
 // === Recommendations API ===
 
-export async function getSimilarAuthors(qid: string, limit = 10): Promise<SimilarAuthor[]> {
-    const { data } = await api.get<SimilarAuthor[]>(`/recommendations/similar-authors/${qid}`, {
-        params: { limit },
-    });
-    return data;
-}
+
 
 // === Health API ===
 
