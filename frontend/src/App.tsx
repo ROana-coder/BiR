@@ -65,6 +65,8 @@ function AppContent() {
 
     // Filter books based on notableWorksOnly
     const filteredBooks = useMemo(() => {
+        // Safety check: ensure books is an array
+        if (!Array.isArray(books)) return [];
         if (!activeFilters?.notableWorksOnly) return books;
         return books.filter(book => book.awards && book.awards.length > 0);
     }, [books, activeFilters?.notableWorksOnly]);
@@ -101,6 +103,7 @@ function AppContent() {
 
     // Extract book QIDs for settings layer
     const bookQids = useMemo(() => {
+        if (!Array.isArray(filteredBooks)) return [];
         return filteredBooks.map(b => b.qid).slice(0, 50); // Limit to top 50 books for performance
     }, [filteredBooks]);
 
