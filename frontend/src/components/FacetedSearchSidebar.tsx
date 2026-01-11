@@ -230,31 +230,18 @@ export function FacetedSearchSidebar({
                         style={{ cursor: 'pointer', border: 'none' }}
                         onClick={() => {
                             onFiltersChange({
-                                country: null,
-                                genre: 'Q1422746',
-                                yearStart: null,
-                                yearEnd: null,
+                                country: 'Q145', // United Kingdom
+                                genre: null,
+                                yearStart: 1837,
+                                yearEnd: 1901,
                                 notableWorksOnly: false,
                             });
                         }}
                     >
-                        Magic Realism ✨
+                        Victorian Era 🇬🇧
                     </button>
-                    <button
-                        className="tag tag--accent"
-                        style={{ cursor: 'pointer', border: 'none' }}
-                        onClick={() => {
-                            onFiltersChange({
-                                country: 'Q142',
-                                genre: 'Q8261',
-                                yearStart: 1800,
-                                yearEnd: 1900,
-                                notableWorksOnly: false,
-                            });
-                        }}
-                    >
-                        19th C. French 🇫🇷
-                    </button>
+
+
                 </div>
             </div>
 
