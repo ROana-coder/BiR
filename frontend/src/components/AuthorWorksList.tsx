@@ -127,7 +127,7 @@ export function AuthorWorksList({ books, filterContext }: AuthorWorksListProps) 
     // Group books by author
     const authorsMap = useMemo(() => {
         // Map stores Book[] keyed by "Author Name"
-        // We also need to map "Author Name" -> "QID"
+        // I also need to map "Author Name" -> "QID"
         const map = new Map<string, Book[]>();
         const qidMap = new Map<string, string>();
 

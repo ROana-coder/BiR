@@ -188,7 +188,7 @@ class SearchService:
                     book.author_qids.append(author_qid)
                     book.authors.append(author_label)
                 elif author_label:
-                    # We have a QID as label - still add but mark as unknown
+                    # I have a QID as label - still add but mark as unknown
                     # This ensures arrays stay aligned
                     book.author_qids.append(author_qid)
                     book.authors.append(f"Unknown Author ({author_qid})")

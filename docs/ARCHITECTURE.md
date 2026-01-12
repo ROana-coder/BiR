@@ -9,7 +9,7 @@ This document captures key architectural decisions made during the development o
 **Status:** Accepted
 
 **Context:**
-We need a comprehensive, freely accessible data source for literary information including authors, books, movements, and geographic data.
+I need a comprehensive, freely accessible data source for literary information including authors, books, movements, and geographic data.
 
 **Decision:**
 Use Wikidata's SPARQL endpoint as the primary data source.

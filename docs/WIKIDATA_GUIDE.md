@@ -240,7 +240,7 @@ GROUP BY ?book ?bookLabel
 
 ## Template System
 
-We use Jinja2 templates for dynamic SPARQL generation:
+I use Jinja2 templates for dynamic SPARQL generation:
 
 ### Template Location
 `backend/app/sparql/templates/`

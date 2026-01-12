@@ -134,7 +134,7 @@ The application provides pre‑defined quick filter presets to instantly explore
 *   **Wikidata (SPARQL)**: A free, massive, and live knowledge graph. Chosen over static databases to ensure data is always current and links to the wider Semantic Web.
 *   **Redis**: Implements "cache-aside" pattern. Essential to mitigate the latency of SPARQL queries (which can take 2-5s) and avoid hitting Wikidata rate limits.
 *   **Docker**: Ensures consistent environments for the multi-service stack (Backend + Frontend + Redis) and simplifies deployment.
-
+Pydantic
 ---
 
 ## 🏗 Architecture Overview
