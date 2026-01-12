@@ -1,19 +1,18 @@
 {
-    # No email needed for HTTP
+    email rotaruoana50@yahoo.it
 }
 
-# :80 tells Caddy to listen on Port 80 for ANY IP/DNS
-:80 {
-    # Serve Frontend (built static files)
+literature-explorer.xyz, www.literature-explorer.xyz {
+    # Serve Frontend
     root * /srv
     encode gzip
     file_server
 
-    # Reverse Proxy API requests to Backend container
+    # Reverse Proxy API
     handle /api/* {
         reverse_proxy backend:8000
     }
 
-    # Handle React Router (Client-side routing)
+    # Handle React Router
     try_files {path} {path}/ /index.html
 }
