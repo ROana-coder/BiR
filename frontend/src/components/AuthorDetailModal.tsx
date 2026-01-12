@@ -64,8 +64,7 @@ export function AuthorDetailModal({ qid, onClose }: AuthorDetailModalProps) {
                 }}
                 onClick={e => e.stopPropagation()}
             >
-                {/* Close Button */}
-                {/* Close Button */}
+
                 <button
                     onClick={onClose}
                     style={{
@@ -93,7 +92,7 @@ export function AuthorDetailModal({ qid, onClose }: AuthorDetailModalProps) {
                     </svg>
                 </button>
 
-                {/* Header / Loading / Error */}
+
                 {loading ? (
                     <div className="p-12 text-center text-zinc-400 w-full">Loading author details...</div>
                 ) : error ? (
@@ -103,7 +102,7 @@ export function AuthorDetailModal({ qid, onClose }: AuthorDetailModalProps) {
                     </div>
                 ) : author ? (
                     <>
-                        {/* Left Column: Image */}
+
                         {author.image_url ? (
                             <div style={{ width: '40%', minWidth: '300px', position: 'relative' }}>
                                 <img
@@ -114,7 +113,7 @@ export function AuthorDetailModal({ qid, onClose }: AuthorDetailModalProps) {
                             </div>
                         ) : null}
 
-                        {/* Right Column: Content */}
+
                         <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
                             <div className="mb-6">
                                 <h2 className="text-3xl font-bold text-white mb-2">{author.name}</h2>
@@ -139,7 +138,7 @@ export function AuthorDetailModal({ qid, onClose }: AuthorDetailModalProps) {
                                     </div>
                                 )}
 
-                                {/* Links to Wiki */}
+
                                 <div className="pt-4 border-t border-white/10">
                                     <h4 className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Learn More</h4>
                                     <div className="flex gap-3">

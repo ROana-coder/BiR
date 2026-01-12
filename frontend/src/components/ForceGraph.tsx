@@ -1,7 +1,5 @@
 /**
- * Force-Directed Graph Component
- * Uses D3 for calculation and React for rendering
- * Visualizes author relationships and influence networks
+ * Author relationships and influence networks (D3)
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -130,7 +128,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
         };
     }, [filteredData, width, height]);
 
-    // Setup zoom behavior
+
     useEffect(() => {
         if (!svgRef.current) return;
 
@@ -148,10 +146,10 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
         };
     }, []);
 
-    // Node drag handlers
 
 
-    // Get node color based on type and centrality
+
+
     const getNodeColor = useCallback((node: SimulationNode) => {
         const isCentral = filteredData.central_nodes.includes(node.id);
         if (isCentral) return 'var(--color-accent)';
@@ -168,14 +166,14 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
         }
     }, [filteredData.central_nodes]);
 
-    // Get node radius based on centrality
+
     const getNodeRadius = useCallback((node: SimulationNode) => {
         const baseRadius = node.type === 'author' ? 8 : 6;
         const centralityBonus = (node.centrality || 0) * 5;
         return baseRadius + centralityBonus;
     }, []);
 
-    // Get edge style
+
     const getEdgeColor = useCallback((edge: SimulationEdge) => {
         const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
         const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
@@ -199,12 +197,12 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
     }
 
     return (
-        <div className="viz-container" style={{ position: 'relative' }}>
-            {/* Graph Info */}
+        <div className="relative border border-white/10 rounded-lg overflow-hidden" style={{ width, height }}>
+
             <div
                 style={{
                     position: 'absolute',
-                    top: 'var(--spacing-4)',
+                    top: 50,
                     left: 'var(--spacing-4)',
                     zIndex: 10,
                     background: 'var(--color-bg-elevated)',
@@ -216,7 +214,6 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                 <strong>{filteredData.node_count}</strong> nodes · <strong>{filteredData.edge_count}</strong> edges
             </div>
 
-            {/* Legend */}
             <div
                 style={{
                     position: 'absolute',
@@ -287,7 +284,7 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                     </marker>
                 </defs>
                 <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
-                    {/* Edges */}
+
                     {edges.map((edge, i) => {
                         const source = edge.source as SimulationNode;
                         const target = edge.target as SimulationNode;
@@ -295,17 +292,27 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
 
                         const isHovered = hoveredNode && (source.id === hoveredNode || target.id === hoveredNode);
 
+
+                        // Determine visual direction (Source -> Target).
+                        // For "influenced_by", we want to show FLOW of influence (Influencer -> Influenced).
+                        // Wikidata: A influenced_by B (A -> B).
+                        // Visual: B -> A (Influencer -> Influenced).
+                        const isInfluence = edge.type === 'influenced_by';
+
+                        const drawSource = isInfluence ? target : source;
+                        const drawTarget = isInfluence ? source : target;
+
                         // Calculate intersection with target node boundary
-                        const dx = target.x - source.x;
-                        const dy = target.y - source.y;
+                        const dx = drawTarget.x! - drawSource.x!;
+                        const dy = drawTarget.y! - drawSource.y!;
                         const distance = Math.sqrt(dx * dx + dy * dy);
-                        const targetRadius = getNodeRadius(target);
+                        const targetRadius = getNodeRadius(drawTarget);
                         const arrowPadding = 4; // Space for arrow
 
                         // Shorten line to stop at edge of node
                         const ratio = (distance - targetRadius - arrowPadding) / distance;
-                        const endX = source.x + dx * ratio;
-                        const endY = source.y + dy * ratio;
+                        const endX = drawSource.x! + dx * ratio;
+                        const endY = drawSource.y! + dy * ratio;
 
                         if (ratio < 0) return null; // Don't draw if nodes are overlapping
 
@@ -313,8 +320,8 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                             <g key={`edge-${i}`}>
                                 <line
                                     className="graph-edge"
-                                    x1={source.x}
-                                    y1={source.y}
+                                    x1={drawSource.x!}
+                                    y1={drawSource.y!}
                                     x2={endX}
                                     y2={endY}
                                     stroke={getEdgeColor(edge)}
@@ -324,21 +331,21 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                                 />
                                 {isHovered && (
                                     <text
-                                        x={(source.x + target.x) / 2}
-                                        y={(source.y + target.y) / 2}
+                                        x={(drawSource.x! + drawTarget.x!) / 2}
+                                        y={(drawSource.y! + drawTarget.y!) / 2}
                                         textAnchor="middle"
                                         fill="var(--color-text-primary)"
                                         fontSize="10px"
                                         style={{ background: 'var(--color-bg)', textShadow: '0 0 4px var(--color-bg)' }}
                                     >
-                                        {edge.label || edge.type.toLowerCase().replace('_', ' ')}
+                                        {isInfluence ? 'influenced' : (edge.label || edge.type.toLowerCase().replace('_', ' '))}
                                     </text>
                                 )}
                             </g>
                         );
                     })}
 
-                    {/* Nodes */}
+
                     {nodes.map((node) => {
                         const radius = getNodeRadius(node);
                         const color = getNodeColor(node);
@@ -408,7 +415,6 @@ export function ForceGraph({ data, width = 800, height = 600, onNodeClick, highl
                 </g>
             </svg>
 
-            {/* Tooltip */}
             {hoveredNode && (
                 <div
                     className="tooltip"

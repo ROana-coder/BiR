@@ -1,6 +1,5 @@
 /**
- * Timeline Visualization Component
- * Shows chronological spread of books and authors
+ * Chronological spread of books and authors
  */
 
 import { useMemo } from 'react';
@@ -9,7 +8,7 @@ import type { Book } from '../types';
 interface TimelineProps {
     books: Book[];
     onBookClick?: (book: Book) => void;
-    /** Filter context for display */
+
     filterContext?: {
         country?: string | null;
         genre?: string | null;
@@ -80,7 +79,7 @@ export function Timeline({ books, filterContext }: TimelineProps) {
         <div style={{ padding: 'var(--spacing-6)', overflowX: 'auto' }}>
             <h3 style={{ marginBottom: 'var(--spacing-6)' }}>{buildTitle()}</h3>
 
-            {/* Stats Summary */}
+
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
@@ -124,7 +123,7 @@ export function Timeline({ books, filterContext }: TimelineProps) {
                     padding: 'var(--spacing-6)'
                 }}
             >
-                {/* Timeline axis */}
+
                 <div
                     style={{
                         position: 'absolute',
@@ -150,7 +149,7 @@ export function Timeline({ books, filterContext }: TimelineProps) {
                                 flex: 1,
                             }}
                         >
-                            {/* Bar */}
+
                             <div
                                 style={{
                                     width: '60%',
@@ -188,7 +187,7 @@ export function Timeline({ books, filterContext }: TimelineProps) {
                                 </span>
                             </div>
 
-                            {/* Year label */}
+
                             <div
                                 style={{
                                     marginTop: 'var(--spacing-4)',

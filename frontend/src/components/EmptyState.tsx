@@ -1,7 +1,4 @@
-/**
- * Empty State Component
- * Displays graceful UI when no data is available
- */
+
 
 
 

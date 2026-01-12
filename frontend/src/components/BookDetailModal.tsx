@@ -39,7 +39,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                 }}
                 onClick={e => e.stopPropagation()}
             >
-                {/* Close Button */}
+
                 <button
                     onClick={onClose}
                     style={{
@@ -67,9 +67,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                     </svg>
                 </button>
 
-                {/* Content */}
                 <div style={{ padding: '2rem', overflowY: 'auto' }}>
-                    {/* Header */}
                     <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>
                             📖 {book.title}
@@ -81,7 +79,6 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {/* Authors */}
                         {book.authors.length > 0 && (
                             <div>
                                 <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
@@ -106,7 +103,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                             </div>
                         )}
 
-                        {/* Publisher */}
+
                         {book.publisher && (
                             <div>
                                 <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
@@ -116,7 +113,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                             </div>
                         )}
 
-                        {/* Publication Place */}
+
                         {book.publication_place && (
                             <div>
                                 <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
@@ -129,7 +126,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                             </div>
                         )}
 
-                        {/* Languages */}
+
                         {(book.languages?.length > 0 || book.language) && (
                             <div>
                                 <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
@@ -170,7 +167,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                             </div>
                         )}
 
-                        {/* Awards */}
+
                         {book.awards.length > 0 && (
                             <div>
                                 <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
@@ -196,7 +193,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                             </div>
                         )}
 
-                        {/* Genres */}
+
                         {book.genres?.length > 0 && (
                             <div>
                                 <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
@@ -222,7 +219,7 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
                             </div>
                         )}
 
-                        {/* Links */}
+
                         <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                             <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.5rem' }}>
                                 Learn More

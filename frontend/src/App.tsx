@@ -345,7 +345,7 @@ function AppContent() {
                                 {filteredBooks.length} books found
                                 {activeFilters?.notableWorksOnly && filteredBooks.length !== books.length && (
                                     <span style={{ color: 'var(--color-accent)', marginLeft: 4 }}>
-                                        (🏆 {books.length - filteredBooks.length} filtered)
+                                        (🏆 {books.length - filteredBooks.length} hidden)
                                     </span>
                                 )}
                             </span>

@@ -1,7 +1,5 @@
 /**
- * Books Force-Directed Graph Component
- * Visualizes relationships between Authors and their Books
- * (Star graph topology: Author -> Books)
+ * Star graph topology: Author -> Books
  */
 
 import { useEffect, useRef, useState, useMemo } from 'react';
@@ -117,7 +115,7 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
         return () => { svg.on('.zoom', null); };
     }, []);
 
-    // Drag Handling
+
 
 
     if (!graphData.nodes.length) {
@@ -126,7 +124,21 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
 
     return (
         <div className="relative border border-white/10 rounded-lg overflow-hidden" style={{ width, height }}>
-            {/* Legend */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 50,
+                    left: 'var(--spacing-4)',
+                    zIndex: 10,
+                    background: 'var(--color-bg-elevated)',
+                    padding: 'var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--font-size-sm)',
+                }}
+            >
+                <strong>{graphData.nodes.length}</strong> nodes (<strong>{graphData.nodes.filter(n => n.type === 'author').length}</strong> authors, <strong>{graphData.nodes.filter(n => n.type === 'book').length}</strong> books)
+            </div>
+
             <div
                 style={{
                     position: 'absolute',
@@ -233,7 +245,7 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
                                     </g>
                                 )}
 
-                                {/* Label */}
+
                                 <text
                                     dy={radius + 10}
                                     textAnchor="middle"
@@ -244,7 +256,7 @@ export function BooksForceGraph({ books, width = 800, height = 600, onNodeClick 
                                     {node.label.length > 15 && !isHovered ? node.label.slice(0, 12) + '...' : node.label}
                                 </text>
 
-                                {/* Detailed Tooltip on Hover */}
+
                                 {isHovered && (
                                     <g transform="translate(15, -25)">
                                         <rect
