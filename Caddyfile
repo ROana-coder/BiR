@@ -3,6 +3,11 @@
 }
 
 literature-explorer.xyz, www.literature-explorer.xyz {
+    log {
+        output stdout
+        level INFO
+    }
+
     # Serve Frontend
     root * /srv
     encode gzip
