@@ -11,13 +11,15 @@ literature-explorer.xyz, www.literature-explorer.xyz {
     # Serve Frontend
     root * /srv
     encode gzip
-    file_server
 
-    # Reverse Proxy API
+    # 1. API: Handle API requests exclusively
     handle /api/* {
         reverse_proxy backend:8000
     }
 
-    # Handle React Router
-    try_files {path} {path}/ /index.html
+    # 2. Frontend: Handle everything else (fallback)
+    handle {
+        file_server
+        try_files {path} {path}/ /index.html
+    }
 }
