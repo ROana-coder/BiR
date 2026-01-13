@@ -4,6 +4,8 @@
 
 > Built for the "Big Data Retriever" assignment: A microservice-based platform to intelligently query, visualize, and recommend literary resources using Wikidata.
 
+### 🚀 **Live Demo**: [https://www.literature-explorer.xyz/](https://www.literature-explorer.xyz/)
+
 Literature Explorer is a sophisticated web application that enables users to explore global literary networks, visualize author migrations, and discover connections between literary movements across time and space.
 
 ---

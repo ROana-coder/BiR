@@ -118,7 +118,9 @@
                 a strict local <strong>RDF Ontology</strong> for data validation. This document details the internal
                 data
                 structures,
-                API specifications, knowledge models, and practical application of external data sources.
+                API specifications, knowledge models, and practical application of external data sources. The platform
+                is publicly available at <a
+                    href="https://www.literature-explorer.xyz/">https://www.literature-explorer.xyz/</a>.
             </p>
         </section>
 
@@ -138,6 +140,19 @@
                 static
                 lists.
             </p>
+            <figure typeof="sa:Video">
+                <div style="background: #f4f4f4; padding: 20px; text-align: center; border-radius: 5px;">
+                    <p><strong>System Demonstration Video</strong></p>
+                    <a href="https://drive.google.com/file/d/1EWSEkhPqBCZm_O1_SKSeYuzj4rypo-n8/view?usp=sharing"
+                        target="_blank"
+                        style="display: inline-block; background: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+                        Watch Demo on Google Drive ↗
+                    </a>
+                </div>
+                <figcaption>
+                    Video 1. System Demonstration: Navigating from Search to Map and Graph visualizations.
+                </figcaption>
+            </figure>
         </section>
 
         <!-- ============================================================================================== -->
@@ -212,6 +227,12 @@
                     </tr>
                 </tbody>
             </table>
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/author_card.png" width="100%" alt="Author Details Modal">
+                <figcaption>
+                    Fig 1. Detailed Author Card view showing biographical data and movement affiliations.
+                </figcaption>
+            </figure>
 
             <h3>2.2 The Book Model (CreativeWork)</h3>
             <p>
@@ -229,6 +250,12 @@ class Book(BaseModel):
     narrative_locations: List[Location]  # wdt:P840 (Story settings)
     awards: List[str]           # wdt:P166
             </code></pre>
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/book_card.png" width="100%" alt="Book Details Modal">
+                <figcaption>
+                    Fig 2. Detailed Book Card view displaying publication metadata and awards.
+                </figcaption>
+            </figure>
 
             <h3>2.3 Graph Visualization Models</h3>
             <p>
@@ -270,31 +297,14 @@ export interface GraphEdge {
             </p>
 
             <h3>3.1 High-Level Architecture Diagram</h3>
-            <div class="diagram">
-                <pre>
-    [ Client Browser ]
-           |
-      (HTTP / JSON)
-           |
-    [ Nginx / Vite Dev Server ]
-           |
-    +------+---------------------------+
-    |      Backend Container           |
-    |  [ FastAPI Router ]              |
-    |          |                       |
-    |  [ Service Layer ]               |
-    |    /     |     \                 |
-    | [Search] [Graph] [Geo]           |
-    |    |     |     |                 |
-    |  [ WikidataClient ] <---(Cache)---> [ Redis Container ]
-    |          |                       |      (Cache-Aside)
-    +----------+-----------------------+
-               |
-        (SPARQL via HTTP)
-               |
-     [ Wikidata Query Service ]
-            </pre>
-            </div>
+            <h3>3.1 High-Level Architecture Diagram</h3>
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/architecture_diagram.png" width="100%" alt="System Architecture Diagram">
+                <figcaption>
+                    Fig 3. Microservices Architecture showing data flow between React Frontend, FastAPI Backend, Redis
+                    Cache, and Wikidata.
+                </figcaption>
+            </figure>
 
             <h3>3.2 Implemented API Endpoints (REST)</h3>
             <p>
@@ -449,6 +459,12 @@ WHERE {
 }
 LIMIT 500
             </code></pre>
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/influence_relations.png" width="100%" alt="Influence Relations Diagram">
+                <figcaption>
+                    Fig 4. Diagram illustrating the multi-hop influence relationships queried from Wikidata.
+                </figcaption>
+            </figure>
 
             <h3>5.2 Infrastructure Resilience</h3>
             <p>
@@ -475,11 +491,26 @@ LIMIT 500
             <h2>6. User Guide & Case Studies</h2>
 
             <div class="note">
-                The application is accessible at <code>http://localhost:3001</code>. The main navigation resides in the
-                left
-                sidebar,
+                The application is deployed at <a
+                    href="https://www.literature-explorer.xyz/">https://www.literature-explorer.xyz/</a>.
+                For local testing, it is accessible at <code>http://localhost:3001</code>. The main navigation resides
+                in the left
                 featuring specific views for Search, Graph, Map, and Timeline.
             </div>
+
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/works.png" width="100%" alt="Works List Interface">
+                <figcaption>
+                    Fig 5. The Works List view displaying organized search results with facets.
+                </figcaption>
+            </figure>
+
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/time_analysis.png" width="100%" alt="Timeline Analysis View">
+                <figcaption>
+                    Fig 6. Interactive Timeline view allowing temporal filtering of literary works.
+                </figcaption>
+            </figure>
 
             <h3>Case Study 1: The "Lost Generation"</h3>
             <p><strong>Objective:</strong> Analyze the migration patterns of American expatriate writers in the 1920s.
@@ -498,6 +529,14 @@ LIMIT 500
                 </li>
                 <li><strong>Conclusion:</strong> Visually confirms the "expatriate" definition of the movement.</li>
             </ol>
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/case_study_map_lost_generation.png" width="100%"
+                    alt="Map View of Lost Generation">
+                <figcaption>
+                    Fig 7. Geospatial clustering of 'Lost Generation' authors showing birthplaces (Red) vs narrative
+                    locations.
+                </figcaption>
+            </figure>
 
             <h3>Case Study 2: Victorian Literary Networks</h3>
             <p><strong>Objective:</strong> Discover the intellectual connections between 19th-century British novelists.
@@ -516,6 +555,13 @@ LIMIT 500
                     </ul>
                 </li>
             </ol>
+            <figure typeof="sa:Image">
+                <img src="./docs/assets/case_study_graph_victorian.png" width="100%"
+                    alt="Network Graph of Victorian Era">
+                <figcaption>
+                    Fig 8. Force-directed graph of Victorian authors, with node size representing centrality.
+                </figcaption>
+            </figure>
 
             <h3>Case Study 3: Validating Ontology Compliance</h3>
             <p><strong>Objective:</strong> Ensure that incoming data from Wikidata meets our strict internal schema
